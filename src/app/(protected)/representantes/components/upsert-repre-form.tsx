@@ -18,17 +18,20 @@ import { Input } from "@/components/ui/input";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import z from "zod";
+import { useAction } from "next-safe-action/hooks";
+import { upsertRepresentante } from "@/actions/upsert-representante";
+import { toast } from "sonner";
 
 const formSchema = z.object({
   name: z.string().trim().min(1, { message: "Nome é obrigatório" }),
   phone: z.string().trim().min(1, { message: "Telefone é obrigatório" }),
 });
 
-const onSubmit = (values: z.infer<typeof formSchema>) => {
-  console.log(values);
-};
+interface UpsertRepresentanteFormProps {
+  onSuccess?: () => void;
+}
 
-const UpsertRepresentanteForm = () => {
+const UpsertRepresentanteForm = ({onSuccess}: UpsertRepresentanteFormProps) => {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -36,6 +39,24 @@ const UpsertRepresentanteForm = () => {
       phone: "",
     },
   });
+
+  const upsertRepresentanteAction = useAction(upsertRepresentante, {
+    onSuccess: () => {
+      toast.success("Representante adicionado com sucesso");
+      onSuccess?.();
+      form.reset();
+    },
+    onError: () => {
+      toast.error("Erro ao adicionar Representante");
+    },
+  });
+
+  const onSubmit = (values: z.infer<typeof formSchema>) => {
+    upsertRepresentanteAction.execute({
+      ...values,
+    });
+  };
+
   return (
     <DialogContent>
       <DialogHeader>
@@ -43,7 +64,7 @@ const UpsertRepresentanteForm = () => {
         <DialogDescription>Adicione um novo Representante</DialogDescription>
       </DialogHeader>
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(() => {})} className="space-y-5">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
           <FormField
             control={form.control}
             name="name"
@@ -71,7 +92,14 @@ const UpsertRepresentanteForm = () => {
             )}
           />
           <DialogFooter>
-            <Button type="submit">Salvar</Button>
+            <Button
+              type="submit"
+              disabled={upsertRepresentanteAction.isPending}
+            >
+              {upsertRepresentanteAction.isPending
+                ? "Carregando..."
+                : "Adicionar"}
+            </Button>
           </DialogFooter>
         </form>
       </Form>
