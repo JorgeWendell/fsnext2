@@ -1,4 +1,3 @@
-import { Button } from "@/components/ui/button";
 import {
   PageActions,
   PageContainer,
@@ -8,9 +7,19 @@ import {
   PageHeaderContent,
   PageTitle,
 } from "@/components/ui/page-container";
-import { Plus } from "lucide-react";
+import { auth } from "@/lib/auth";
 
-const RepresentantesPage = () => {
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
+import AddRepresentanteButton from "./components/add-repre-button";
+
+const RepresentantesPage = async () => {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+  if (!session?.user) {
+    redirect("/authentication");
+  }
   return (
     <PageContainer>
       <PageHeader>
@@ -19,10 +28,7 @@ const RepresentantesPage = () => {
           <PageDescription> Gerencie seus representantes</PageDescription>
         </PageHeaderContent>
         <PageActions>
-          <Button>
-            <Plus />
-            Adicionar Representante
-          </Button>
+          <AddRepresentanteButton />
         </PageActions>
       </PageHeader>
       <PageContent>
