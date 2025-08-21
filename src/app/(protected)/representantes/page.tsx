@@ -37,7 +37,7 @@ const RepresentantesPage = async () => {
         </PageActions>
       </PageHeader>
       <PageContent>
-        <div className="grid grid-cols-3 gap-6">
+        <div className="grid grid-cols-5 gap-6">
           {representantes.map((representante) => (
             <RepresentanteCard
               key={representante.id}
