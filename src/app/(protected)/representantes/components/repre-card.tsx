@@ -13,12 +13,15 @@ import { Separator } from "@/components/ui/separator";
 import { representantesTable } from "@/db/schema";
 
 import UpsertRepresentanteForm from "./upsert-repre-form";
+import { useState } from "react";
 
 interface RepresentanteCardProps {
   representante: typeof representantesTable.$inferSelect;
 }
 
 const RepresentanteCard = ({ representante }: RepresentanteCardProps) => {
+  const [isUpsertRepresentanteDialogOpen, setIsUpsertRepresentanteDialogOpen] =
+    useState(false);
   const representanteInitials = representante.name
     .split(" ")
     .map((name) => name.charAt(0))
@@ -36,11 +39,17 @@ const RepresentanteCard = ({ representante }: RepresentanteCardProps) => {
       </CardHeader>
       <Separator />
       <CardFooter>
-        <Dialog>
+        <Dialog
+          open={isUpsertRepresentanteDialogOpen}
+          onOpenChange={setIsUpsertRepresentanteDialogOpen}
+        >
           <DialogTrigger asChild>
             <Button className="w-full">Ver Detalhes</Button>
           </DialogTrigger>
-          <UpsertRepresentanteForm />
+          <UpsertRepresentanteForm
+            representante={representante}
+            onSuccess={() => setIsUpsertRepresentanteDialogOpen(false)}
+          />
         </Dialog>
       </CardFooter>
     </Card>

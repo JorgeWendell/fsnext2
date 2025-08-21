@@ -21,6 +21,7 @@ import z from "zod";
 import { useAction } from "next-safe-action/hooks";
 import { upsertRepresentante } from "@/actions/upsert-representante";
 import { toast } from "sonner";
+import { representantesTable } from "@/db/schema";
 
 const formSchema = z.object({
   name: z.string().trim().min(1, { message: "Nome é obrigatório" }),
@@ -28,15 +29,19 @@ const formSchema = z.object({
 });
 
 interface UpsertRepresentanteFormProps {
+  representante?: typeof representantesTable.$inferSelect;
   onSuccess?: () => void;
 }
 
-const UpsertRepresentanteForm = ({onSuccess}: UpsertRepresentanteFormProps) => {
+const UpsertRepresentanteForm = ({
+  representante,
+  onSuccess,
+}: UpsertRepresentanteFormProps) => {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: "",
-      phone: "",
+      name: representante?.name ?? "",
+      phone: representante?.phone ?? "",
     },
   });
 
@@ -54,14 +59,19 @@ const UpsertRepresentanteForm = ({onSuccess}: UpsertRepresentanteFormProps) => {
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     upsertRepresentanteAction.execute({
       ...values,
+      id: representante?.id,
     });
   };
 
   return (
     <DialogContent>
       <DialogHeader>
-        <DialogTitle>Adicionar Representante</DialogTitle>
-        <DialogDescription>Adicione um novo Representante</DialogDescription>
+        <DialogTitle>
+          {representante ? representante.name : "Adicionar Representante"}
+        </DialogTitle>
+        <DialogDescription>
+          {representante ? "Editar Representante" : "Adicionar Representante"}
+        </DialogDescription>
       </DialogHeader>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
@@ -97,8 +107,10 @@ const UpsertRepresentanteForm = ({onSuccess}: UpsertRepresentanteFormProps) => {
               disabled={upsertRepresentanteAction.isPending}
             >
               {upsertRepresentanteAction.isPending
-                ? "Carregando..."
-                : "Adicionar"}
+                ? "Salvando..."
+                : representante
+                  ? "Salvar"
+                  : "Adicionar"}
             </Button>
           </DialogFooter>
         </form>
