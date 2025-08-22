@@ -21,9 +21,9 @@ import { useForm } from "react-hook-form";
 import z from "zod";
 import { useAction } from "next-safe-action/hooks";
 import { toast } from "sonner";
-import { escolasTable } from "@/db/schema";
+import { alunosTable } from "@/db/schema";
 
-import { upsertEscola } from "@/actions/upsert-escola";
+import { upsertAluno } from "@/actions/upsert-aluno";
 import {
   Select,
   SelectContent,
@@ -36,70 +36,72 @@ import {
 
 const formSchema = z.object({
   name: z.string().trim().min(1, { message: "Nome é obrigatório" }),
+  class: z.string().trim().min(1, { message: "Classe é obrigatória" }),
   address: z.string().trim().min(1, { message: "Endereço é obrigatório" }),
   phone: z.string().trim().min(1, { message: "Telefone é obrigatório" }),
-  representante: z
+  sex: z.enum(["male", "female"], { message: "Sexo é obrigatório" }),
+  escola: z
     .string()
     .trim()
-    .min(1, { message: "Representante é obrigatório" }),
+    .min(1, { message: "Escola é obrigatória" }),
 });
 
 type FormSchema = z.infer<typeof formSchema>;
 
-// Se quiser manter como string
-
-type Representante = {
+type Escola = {
   id: string
   name: string
 }
 
-interface UpsertEscolaFormProps {
-  escola?: typeof escolasTable.$inferSelect;
+interface UpsertAlunoFormProps {
+  aluno?: typeof alunosTable.$inferSelect;
   onSuccess?: () => void;
-  representantes: Representante[];
+  escolas: Escola[];
 }
 
-const UpsertEscolaForm = ({
-  escola,
+const UpsertAlunoForm = ({
+  aluno,
   onSuccess,
-  representantes = [],
-}: UpsertEscolaFormProps) => {
-  console.log("UpsertEscolaForm - representantes:", representantes);
+  escolas = [],
+}: UpsertAlunoFormProps) => {
+  console.log("UpsertAlunoForm - escolas:", escolas);
   const form = useForm<FormSchema>({
     shouldUnregister: true,
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: escola?.name ?? "",
-      address: escola?.address ?? "",
-      phone: escola?.phone ?? "",
-      representante: escola?.representanteId ?? "",
+      name: aluno?.name ?? "",
+      class: aluno?.class ?? "",
+      address: aluno?.address ?? "",
+      phone: aluno?.phone ?? "",
+      sex: aluno?.sex ?? "male",
+      escola: aluno?.escola ?? "",
     },
   });
 
-  const upsertEscolaAction = useAction(upsertEscola, {
+  const upsertAlunoAction = useAction(upsertAluno, {
     onSuccess: () => {
-      toast.success("Escola adicionada com sucesso");
+      toast.success("Aluno adicionado com sucesso");
       onSuccess?.();
       form.reset();
     },
     onError: () => {
-      toast.error("Erro ao adicionar Escola");
+      toast.error("Erro ao adicionar Aluno");
     },
   });
 
   const onSubmit = (values: FormSchema) => {
-    upsertEscolaAction.execute({
+    upsertAlunoAction.execute({
       ...values,
-      id: escola?.id,
+      id: aluno?.id,
     });
   };
 
   return (
     <DialogContent>
       <DialogHeader>
-        <DialogTitle>{escola ? escola.name : "Adicionar Escola"}</DialogTitle>
+        <DialogTitle>{aluno ? aluno.name : "Adicionar Aluno"}</DialogTitle>
         <DialogDescription>
-          {escola ? "Editar Escola" : "Adicionar Escola"}
+          {aluno ? "Editar Aluno" : "Adicionar Aluno"}
         </DialogDescription>
       </DialogHeader>
       <Form {...form}>
@@ -112,6 +114,19 @@ const UpsertEscolaForm = ({
                 <FormLabel>Nome</FormLabel>
                 <FormControl>
                   <Input placeholder="Nome" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="class"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Classe</FormLabel>
+                <FormControl>
+                  <Input placeholder="Classe" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -145,26 +160,48 @@ const UpsertEscolaForm = ({
           />
           <FormField
             control={form.control}
-            name="representante"
+            name="sex"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Representante</FormLabel>
+                <FormLabel>Sexo</FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecione um representante" />
+                    <SelectValue placeholder="Selecione o sexo" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectGroup>
-                      <SelectLabel>Representantes</SelectLabel>
-                      {representantes && representantes.length > 0 ? (
-                        representantes.map((representante) => (
-                          <SelectItem key={representante.id} value={representante.id}>
-                            {representante.name}
+                      <SelectLabel>Sexo</SelectLabel>
+                      <SelectItem value="male">Masculino</SelectItem>
+                      <SelectItem value="female">Feminino</SelectItem>
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="escola"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Escola</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione uma escola" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      <SelectLabel>Escolas</SelectLabel>
+                      {escolas && escolas.length > 0 ? (
+                        escolas.map((escola) => (
+                          <SelectItem key={escola.id} value={escola.id}>
+                            {escola.name}
                           </SelectItem>
                         ))
                       ) : (
                         <SelectItem value="" disabled>
-                          Nenhum representante encontrado
+                          Nenhuma escola encontrada
                         </SelectItem>
                       )}
                     </SelectGroup>
@@ -176,10 +213,10 @@ const UpsertEscolaForm = ({
           />
 
           <DialogFooter>
-            <Button type="submit" disabled={upsertEscolaAction.isPending}>
-              {upsertEscolaAction.isPending
+            <Button type="submit" disabled={upsertAlunoAction.isPending}>
+              {upsertAlunoAction.isPending
                 ? "Salvando..."
-                : escola
+                : aluno
                   ? "Salvar"
                   : "Adicionar"}
             </Button>
@@ -190,4 +227,4 @@ const UpsertEscolaForm = ({
   );
 };
 
-export default UpsertEscolaForm;
+export default UpsertAlunoForm;

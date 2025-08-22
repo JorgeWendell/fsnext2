@@ -15,44 +15,44 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
-import { escolasTable } from "@/db/schema";
+import { alunosTable } from "@/db/schema";
 
 import { useState } from "react";
 import { TrashIcon } from "lucide-react";
 
 import { toast } from "sonner";
 import { useAction } from "next-safe-action/hooks";
-import UpsertEscolaForm from "./upsert-escola-form";
-import { deleteEscola } from "@/actions/delete-escola";
+import UpsertAlunoForm from "./upsert-aluno-form";
+import { deleteAluno } from "@/actions/delete-aluno";
 
-type Representante = {
+type Escola = {
   id: string;
   name: string;
 }
 
-interface EscolaCardProps {
-  escola: typeof escolasTable.$inferSelect;
-  representantes: Representante[];
+interface AlunoCardProps {
+  aluno: typeof alunosTable.$inferSelect;
+  escolas: Escola[];
 }
 
-const EscolaCard = ({ escola, representantes }: EscolaCardProps) => {
-  const [isUpsertEscolaDialogOpen, setIsUpsertEscolaDialogOpen] = useState(false);
+const AlunoCard = ({ aluno, escolas }: AlunoCardProps) => {
+  const [isUpsertAlunoDialogOpen, setIsUpsertAlunoDialogOpen] = useState(false);
   
-  const deleteEscolaAction = useAction(deleteEscola, {
+  const deleteAlunoAction = useAction(deleteAluno, {
     onSuccess: () => {
-      toast.success("Escola excluido com sucesso");
+      toast.success("Aluno excluído com sucesso");
     },
     onError: () => {
-      toast.error("Erro ao excluir Escola");
+      toast.error("Erro ao excluir Aluno");
     },
   });
 
-  const handleDeleteEscolaClick = () => {
-    if (!escola) return;
-    deleteEscolaAction.execute({ id: escola.id });
+  const handleDeleteAlunoClick = () => {
+    if (!aluno) return;
+    deleteAlunoAction.execute({ id: aluno.id });
   };
 
-  const escolaInitials = escola.name
+  const alunoInitials = aluno.name
     .split(" ")
     .map((name) => name.charAt(0))
     .join("");
@@ -62,12 +62,15 @@ const EscolaCard = ({ escola, representantes }: EscolaCardProps) => {
       <CardHeader>
         <div className="flex items-center gap-4">
           <Avatar className="h-10 w-10">
-            <AvatarFallback>{escolaInitials}</AvatarFallback>
+            <AvatarFallback>{alunoInitials}</AvatarFallback>
           </Avatar>
           <div>
-            <h3 className="text-sm font-medium">{escola.name}</h3>
+            <h3 className="text-sm font-medium">{aluno.name}</h3>
             <p className="text-sm text-muted-foreground">
-              Telefone: {escola.phone}
+              Classe: {aluno.class}
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Telefone: {aluno.phone}
             </p>
           </div>
         </div>
@@ -75,16 +78,16 @@ const EscolaCard = ({ escola, representantes }: EscolaCardProps) => {
       <Separator />
       <CardFooter className="flex flex-col gap-2">
         <Dialog
-          open={isUpsertEscolaDialogOpen}
-          onOpenChange={setIsUpsertEscolaDialogOpen}
+          open={isUpsertAlunoDialogOpen}
+          onOpenChange={setIsUpsertAlunoDialogOpen}
         >
           <DialogTrigger asChild>
             <Button className="w-full">Ver Detalhes</Button>
           </DialogTrigger>
-          <UpsertEscolaForm
-            escola={escola}
-            representantes={representantes}
-            onSuccess={() => setIsUpsertEscolaDialogOpen(false)}
+          <UpsertAlunoForm
+            aluno={aluno}
+            escolas={escolas}
+            onSuccess={() => setIsUpsertAlunoDialogOpen(false)}
           />
         </Dialog>
         <AlertDialog>
@@ -97,16 +100,16 @@ const EscolaCard = ({ escola, representantes }: EscolaCardProps) => {
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>
-                Tem certeza que quer deletar essa Escola?
+                Tem certeza que quer deletar esse Aluno?
               </AlertDialogTitle>
               <AlertDialogDescription>
-                Essa ação não pode ser revertida. Isso irá deletar a Escola e
-                todos os alunos a ela atribuidas.
+                Essa ação não pode ser revertida. Isso irá deletar o Aluno e
+                todos os dados relacionados a ele.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancelar</AlertDialogCancel>
-              <AlertDialogAction onClick={handleDeleteEscolaClick}>
+              <AlertDialogAction onClick={handleDeleteAlunoClick}>
                 Deletar
               </AlertDialogAction>
             </AlertDialogFooter>
@@ -117,4 +120,4 @@ const EscolaCard = ({ escola, representantes }: EscolaCardProps) => {
   );
 };
 
-export default EscolaCard;
+export default AlunoCard;

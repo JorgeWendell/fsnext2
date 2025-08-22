@@ -31,7 +31,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
+
 import { authClient } from "@/lib/auth-client";
 import { usePathname, useRouter } from "next/navigation";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -79,7 +79,6 @@ export function AppSidebar() {
   const router = useRouter();
 
   const session = authClient.useSession();
-  session.data?.user.name;
 
   const pathname = usePathname();
   const handleSignOut = async () => {

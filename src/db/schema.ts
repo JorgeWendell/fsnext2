@@ -49,20 +49,20 @@ export const verificationsTable = pgTable("verifications", {
  updatedAt: timestamp('updated_at')
                 });
 
+export const representantesTable = pgTable("representantes", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    name: text("name").notNull(),
+    phone: text("phone").notNull(),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updateAt: timestamp("update_at").notNull().defaultNow().$onUpdate(() => new Date()),
+});
+
 export const escolasTable = pgTable("escolas", {
     id: uuid("id").primaryKey().defaultRandom(),
     name: text("name").notNull(),
     address: text("address").notNull(),
     phone: text("phone").notNull(),
     representanteId: uuid("representanteId").notNull().references(() => representantesTable.id, {onDelete: "set null"}),
-    createdAt: timestamp("created_at").notNull().defaultNow(),
-    updateAt: timestamp("update_at").notNull().defaultNow().$onUpdate(() => new Date()),
-});
-
-export const representantesTable = pgTable("representantes", {
-    id: uuid("id").primaryKey().defaultRandom(),
-    name: text("name").notNull(),
-    phone: text("phone").notNull(),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updateAt: timestamp("update_at").notNull().defaultNow().$onUpdate(() => new Date()),
 });
@@ -103,13 +103,6 @@ export const alunosTableRelations = relations(alunosTable, ({ one }) => ({
     }),
 }))
 
-export const alunoFinance = relations(alunosTable, ({ one }) => ({
-    finances: one(financesTable, {
-        fields: [alunosTable.id],
-        references: [financesTable.alunoId],
-    }),
-}))
-
 export const financeMethod =pgEnum("finances_method", ["pix", "debit", "creditvista", "creditparc", "bank_slip"]);
 
 export const financeBankSlip = pgEnum("finances_bank_slip", ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]);
@@ -128,5 +121,12 @@ export const financesTableRelations = relations(financesTable, ({ one }) => ({
     aluno: one(alunosTable, {
         fields: [financesTable.alunoId],
         references: [alunosTable.id],
+    }),
+}))
+
+export const alunoFinance = relations(alunosTable, ({ one }) => ({
+    finances: one(financesTable, {
+        fields: [alunosTable.id],
+        references: [financesTable.alunoId],
     }),
 }))
