@@ -1,8 +1,8 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { DialogTrigger } from "@radix-ui/react-dialog";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+
 import { Plus } from "lucide-react";
 import UpsertRepresentanteForm from "./upsert-repre-form";
 import { useState } from "react";
