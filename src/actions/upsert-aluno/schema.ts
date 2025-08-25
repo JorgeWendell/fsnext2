@@ -11,6 +11,8 @@ export const upsertAlunoSchema = z.object({
     .string()
     .trim()
     .min(1, { message: "Escola é obrigatória" }),
+  album: z.boolean().default(false).optional(),
+  valor_album: z.string().optional(),
 });
 
 export type upsertAlunoSchema = z.infer<typeof upsertAlunoSchema>;

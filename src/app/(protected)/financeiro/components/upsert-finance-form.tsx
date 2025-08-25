@@ -30,18 +30,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { upsertFinance } from "@/actions/upsert-finance";
 import { toast } from "sonner";
-import { useState, useEffect } from "react";
-
-const upsertFinanceSchema = z.object({
-  id: z.string().optional(),
-  method: z.enum(["pix", "debit", "creditvista", "creditparc", "bank_slip"]),
-  bank_slip: z.enum(["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]).optional(),
-  valueTotal: z.string().min(1, "Valor total é obrigatório"),
-  valueParcela: z.string().optional(),
-  alunoId: z.string().min(1, "Aluno é obrigatório"),
-});
-
-type UpsertFinanceInput = z.infer<typeof upsertFinanceSchema>;
+import { useState, useEffect, useMemo } from "react";
+import { addMonths, format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 interface UpsertFinanceFormProps {
   finance?: typeof financesTable.$inferSelect;
@@ -49,9 +40,20 @@ interface UpsertFinanceFormProps {
   onSuccess: () => void;
 }
 
+const upsertFinanceSchema = z.object({
+  id: z.string().optional(),
+  method: z.enum(["pix", "debit", "creditvista", "creditparc", "bank_slip"]),
+  bank_slip: z.enum(["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]).optional(),
+  valueTotal: z.string().min(1, "Valor é obrigatório"),
+  alunoId: z.string().min(1, "Aluno é obrigatório"),
+});
+
+type UpsertFinanceInput = z.infer<typeof upsertFinanceSchema>;
+
 const UpsertFinanceForm = ({ finance, alunoId, onSuccess }: UpsertFinanceFormProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedMethod, setSelectedMethod] = useState<string>("");
+  const [firstDueDate, setFirstDueDate] = useState<string>("");
 
   const form = useForm<UpsertFinanceInput>({
     resolver: zodResolver(upsertFinanceSchema),
@@ -60,15 +62,14 @@ const UpsertFinanceForm = ({ finance, alunoId, onSuccess }: UpsertFinanceFormPro
       method: finance?.method || "pix",
       bank_slip: finance?.bank_slip || undefined,
       valueTotal: finance?.valueTotal || "",
-      valueParcela: "",
       alunoId: alunoId,
     },
   });
 
   const upsertFinanceAction = useAction(upsertFinance, {
     onSuccess: (data) => {
-      if (data.error) {
-        toast.error(data.error);
+      if ((data as any).error) {
+        toast.error((data as any).error);
       } else {
         toast.success(finance ? "Dados financeiros atualizados com sucesso!" : "Dados financeiros adicionados com sucesso!");
         form.reset();
@@ -88,22 +89,15 @@ const UpsertFinanceForm = ({ finance, alunoId, onSuccess }: UpsertFinanceFormPro
   const handleMethodChange = (method: string) => {
     setSelectedMethod(method);
     form.setValue("method", method as any);
-    
-    // Limpar parcela se não for boleto ou crédito parcelado
     if (method !== "bank_slip" && method !== "creditparc") {
       form.setValue("bank_slip", undefined);
     }
   };
 
   const formatValue = (value: string) => {
-    // Remove tudo que não é número
     const numericValue = value.replace(/\D/g, "");
-    
-    // Converte para centavos
     const cents = parseInt(numericValue) || 0;
     const reais = cents / 100;
-    
-    // Formata como moeda brasileira
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL',
@@ -114,35 +108,32 @@ const UpsertFinanceForm = ({ finance, alunoId, onSuccess }: UpsertFinanceFormPro
   const handleValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     const numericValue = value.replace(/\D/g, "");
-    
     if (numericValue) {
       const cents = parseInt(numericValue);
       const reais = (cents / 100).toFixed(2);
       form.setValue("valueTotal", reais);
-      
-             // Calcular valor das parcelas se for boleto bancário ou crédito parcelado
-       if ((selectedMethod === "bank_slip" || selectedMethod === "creditparc") && form.getValues("bank_slip")) {
-         const numParcelas = parseInt(form.getValues("bank_slip") || "1");
-         const valorParcela = (cents / 100 / numParcelas).toFixed(2);
-         form.setValue("valueParcela", valorParcela);
-       }
     } else {
       form.setValue("valueTotal", "");
-      form.setValue("valueParcela", "");
     }
   };
 
-  const handleParcelaChange = (parcela: string) => {
-    form.setValue("bank_slip", parcela as "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "10");
-    
-         // Recalcular valor das parcelas se já tiver valor total
-     const valorTotal = form.getValues("valueTotal");
-     if ((selectedMethod === "bank_slip" || selectedMethod === "creditparc") && valorTotal && parcela) {
-       const numParcelas = parseInt(parcela);
-       const valorParcela = (parseFloat(valorTotal) / numParcelas).toFixed(2);
-       form.setValue("valueParcela", valorParcela);
-     }
-  };
+  const numParcelas = useMemo(() => parseInt(form.getValues("bank_slip") || "0", 10) || 0, [form.watch("bank_slip")]);
+  const valorTotalNumber = useMemo(() => parseFloat(form.getValues("valueTotal") || "0") || 0, [form.watch("valueTotal")]);
+  const valorParcelaNumber = useMemo(() => numParcelas > 0 ? valorTotalNumber / numParcelas : 0, [numParcelas, valorTotalNumber]);
+
+  const parcelasPreview = useMemo(() => {
+    if (selectedMethod !== "bank_slip" || !firstDueDate || numParcelas <= 0 || valorParcelaNumber <= 0) return [] as { date: string; value: string }[];
+    const start = new Date(firstDueDate);
+    const list: { date: string; value: string }[] = [];
+    for (let i = 0; i < numParcelas; i++) {
+      const due = addMonths(start, i);
+      list.push({
+        date: format(due, "dd/MM/yyyy", { locale: ptBR }),
+        value: new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valorParcelaNumber),
+      });
+    }
+    return list;
+  }, [selectedMethod, firstDueDate, numParcelas, valorParcelaNumber]);
 
   useEffect(() => {
     if (finance) {
@@ -201,73 +192,89 @@ const UpsertFinanceForm = ({ finance, alunoId, onSuccess }: UpsertFinanceFormPro
                 )}
               />
 
-                             {(selectedMethod === "bank_slip" || selectedMethod === "creditparc") && (
-                 <FormField
-                   control={form.control}
-                   name="bank_slip"
-                   render={({ field }) => (
-                     <FormItem>
-                       <FormLabel>Parcela</FormLabel>
-                       <Select
-                         value={field.value}
-                         onValueChange={handleParcelaChange}
-                       >
-                         <FormControl>
-                           <SelectTrigger>
-                             <SelectValue placeholder="Selecione a parcela" />
-                           </SelectTrigger>
-                         </FormControl>
-                         <SelectContent>
-                           {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
-                             <SelectItem key={num} value={num.toString()}>
-                               Parcela {num}
-                             </SelectItem>
-                           ))}
-                         </SelectContent>
-                       </Select>
-                       <FormMessage />
-                     </FormItem>
-                   )}
-                 />
-               )}
+              {(selectedMethod === "bank_slip" || selectedMethod === "creditparc") && (
+                <FormField
+                  control={form.control}
+                  name="bank_slip"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Parcela</FormLabel>
+                      <Select
+                        value={field.value}
+                        onValueChange={(v)=>form.setValue("bank_slip", v as any)}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione a parcela" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
+                            <SelectItem key={num} value={num.toString()}>
+                              Parcela {num}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
 
-               {(selectedMethod === "bank_slip" || selectedMethod === "creditparc") && form.getValues("bank_slip") && form.getValues("valueTotal") && (
-                 <FormField
-                   control={form.control}
-                   name="valueParcela"
-                   render={({ field }) => (
-                     <FormItem>
-                       <FormLabel>Valor das Parcelas</FormLabel>
-                       <FormControl>
-                         <Input
-                           placeholder="R$ 0,00"
-                           value={field.value ? formatValue(field.value) : ""}
-                           readOnly
-                         />
-                       </FormControl>
-                       <FormMessage />
-                     </FormItem>
-                   )}
-                 />
-               )}
+              {selectedMethod === "bank_slip" && (
+                <FormItem>
+                  <FormLabel>Data do 1º Vencimento</FormLabel>
+                  <FormControl>
+                    <Input type="date" value={firstDueDate} onChange={(e)=>setFirstDueDate(e.target.value)} />
+                  </FormControl>
+                </FormItem>
+              )}
 
-                             <FormField
-                 control={form.control}
-                 name="valueTotal"
-                 render={({ field }) => (
-                   <FormItem>
-                     <FormLabel>Valor Total</FormLabel>
-                     <FormControl>
-                       <Input
-                         placeholder="R$ 0,00"
-                         value={field.value ? formatValue(field.value) : ""}
-                         onChange={handleValueChange}
-                       />
-                     </FormControl>
-                     <FormMessage />
-                   </FormItem>
-                 )}
-               />
+              {(selectedMethod === "bank_slip" || selectedMethod === "creditparc") && form.getValues("bank_slip") && form.getValues("valueTotal") && (
+                <FormItem>
+                  <FormLabel>Valor das Parcelas</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="R$ 0,00"
+                      value={valorParcelaNumber > 0 ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valorParcelaNumber) : ""}
+                      readOnly
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+
+              <FormField
+                control={form.control}
+                name="valueTotal"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Valor Total</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="R$ 0,00"
+                        value={field.value ? formatValue(field.value) : ""}
+                        onChange={handleValueChange}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {selectedMethod === "bank_slip" && parcelasPreview.length > 0 && (
+                <div className="space-y-2 rounded-md border p-3">
+                  <div className="text-sm font-medium">Boletos (pré-visualização)</div>
+                  <ul className="text-sm space-y-1">
+                    {parcelasPreview.map((p, idx) => (
+                      <li key={idx} className="flex items-center justify-between">
+                        <span>{idx + 1}ª parcela • {p.date}</span>
+                        <span className="font-medium">{p.value}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
 
               <DialogFooter>
                 <Button

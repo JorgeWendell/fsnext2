@@ -1,0 +1,1 @@
+ALTER TABLE "finances" ADD COLUMN "parcelas_pagas" text;

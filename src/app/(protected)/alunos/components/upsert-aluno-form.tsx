@@ -44,7 +44,14 @@ const formSchema = z.object({
     .string()
     .trim()
     .min(1, { message: "Escola é obrigatória" }),
-});
+  album: z.boolean().optional(),
+  valor_album: z.string().optional(),
+}).refine((data) => {
+  if (data.album) {
+    return !!data.valor_album && data.valor_album.trim() !== "";
+  }
+  return true;
+}, { path: ["valor_album"], message: "Informe o valor do álbum" });
 
 type FormSchema = z.infer<typeof formSchema>;
 
@@ -64,7 +71,6 @@ const UpsertAlunoForm = ({
   onSuccess,
   escolas = [],
 }: UpsertAlunoFormProps) => {
-  console.log("UpsertAlunoForm - escolas:", escolas);
   const form = useForm<FormSchema>({
     shouldUnregister: true,
     resolver: zodResolver(formSchema),
@@ -75,6 +81,8 @@ const UpsertAlunoForm = ({
       phone: aluno?.phone ?? "",
       sex: aluno?.sex ?? "male",
       escola: aluno?.escola ?? "",
+      album: (aluno as any)?.album ?? false,
+      valor_album: (aluno as any)?.valor_album ?? "",
     },
   });
 
@@ -88,6 +96,29 @@ const UpsertAlunoForm = ({
       toast.error("Erro ao adicionar Aluno");
     },
   });
+
+  const formatCurrency = (value: string) => {
+    const onlyDigits = (value || "").replace(/\D/g, "");
+    const cents = parseInt(onlyDigits || "0", 10);
+    const reais = cents / 100;
+    return new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+      minimumFractionDigits: 2,
+    }).format(reais);
+  };
+
+  const handleAlbumValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value;
+    const onlyDigits = raw.replace(/\D/g, "");
+    if (!onlyDigits) {
+      form.setValue("valor_album", "");
+      return;
+    }
+    const cents = parseInt(onlyDigits, 10);
+    const asNumberString = (cents / 100).toFixed(2);
+    form.setValue("valor_album", asNumberString);
+  };
 
   const onSubmit = (values: FormSchema) => {
     upsertAlunoAction.execute({
@@ -211,6 +242,45 @@ const UpsertAlunoForm = ({
               </FormItem>
             )}
           />
+
+          <FormField
+            control={form.control}
+            name="album"
+            render={({ field }) => (
+              <FormItem className="flex items-center space-x-2">
+                <FormControl>
+                  <input
+                    type="checkbox"
+                    checked={Boolean(field.value)}
+                    onChange={(e) => field.onChange(e.target.checked)}
+                    className="h-4 w-4 rounded border"
+                  />
+                </FormControl>
+                <FormLabel className="!mt-0">Álbum</FormLabel>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {form.watch("album") && (
+            <FormField
+              control={form.control}
+              name="valor_album"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Valor do Álbum</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="R$ 0,00"
+                      value={field.value ? formatCurrency(field.value) : ""}
+                      onChange={handleAlbumValueChange}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
 
           <DialogFooter>
             <Button type="submit" disabled={upsertAlunoAction.isPending}>

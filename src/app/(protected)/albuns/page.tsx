@@ -3,43 +3,39 @@ import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
-import { alunosTable, escolasTable, financesTable } from "@/db/schema";
-import ReportsWrapper from "./components/reports-wrapper";
+import { alunosTable, escolasTable } from "@/db/schema";
+import AlbunsWrapper from "./components/albuns-wrapper";
 
-const ReportsPage = async () => {
+const AlbunsPage = async () => {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session?.user) redirect("/authentication");
 
   let alunos: typeof alunosTable.$inferSelect[] = [];
   let escolas: typeof escolasTable.$inferSelect[] = [];
-  let finances: typeof financesTable.$inferSelect[] = [];
 
   try {
     escolas = await db.select().from(escolasTable);
-    alunos = await db.query.alunosTable.findMany();
-    finances = await db.select().from(financesTable);
+    const allAlunos = await db.query.alunosTable.findMany();
+    alunos = allAlunos.filter((a: any) => a.album === true);
   } catch (e) {
     alunos = [];
     escolas = [];
-    finances = [];
   }
 
   return (
     <PageContainer>
       <PageHeader>
         <PageHeaderContent>
-          <PageTitle>Relatórios</PageTitle>
-          <PageDescription>Analise e exporte relatórios financeiros</PageDescription>
+          <PageTitle>Álbuns</PageTitle>
+          <PageDescription>Gerencie os pedidos de álbuns dos alunos</PageDescription>
         </PageHeaderContent>
-        <PageActions>
-          {/* Ações da página podem ser adicionadas aqui */}
-        </PageActions>
+        <PageActions />
       </PageHeader>
       <PageContent>
-        <ReportsWrapper alunos={alunos} escolas={escolas} finances={finances} />
+        <AlbunsWrapper alunos={alunos} escolas={escolas} />
       </PageContent>
     </PageContainer>
   );
 };
 
-export default ReportsPage;
+export default AlbunsPage;

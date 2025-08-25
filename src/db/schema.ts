@@ -92,6 +92,8 @@ export const alunosTable = pgTable("alunos", {
     address: text("address").notNull(),
     phone: text("phone").notNull(),    
     sex: alunosSexEnum("sex").notNull(),    
+    album: boolean("album").notNull().default(false),
+    valor_album: text("valor_album"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updateAt: timestamp("update_at").notNull().defaultNow().$onUpdate(() => new Date()),
 });
@@ -112,6 +114,7 @@ export const financesTable = pgTable("finances", {
     method: financeMethod("method").notNull(),
     bank_slip: financeBankSlip("bank_slip"),
     valueTotal: text("value").notNull(),
+    parcelasPagas: text("parcelas_pagas"), // JSON string para armazenar status das parcelas
     alunoId: uuid("alunoId").notNull().references(() => alunosTable.id , {onDelete: "set null"}),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updateAt: timestamp("update_at").notNull().defaultNow().$onUpdate(() => new Date()),
