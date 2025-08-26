@@ -15,6 +15,20 @@
       "when": 1756142852983,
       "tag": "0001_smart_callisto",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1756208925334,
+      "tag": "0002_bored_captain_universe",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1756211126609,
+      "tag": "0003_next_dreaming_celestial",
+      "breakpoints": true
     }
   ]
 }

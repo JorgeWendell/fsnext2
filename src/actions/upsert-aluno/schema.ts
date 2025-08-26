@@ -13,6 +13,12 @@ export const upsertAlunoSchema = z.object({
     .min(1, { message: "Escola é obrigatória" }),
   album: z.boolean().default(false).optional(),
   valor_album: z.string().optional(),
+  colacao: z.boolean().default(false).optional(),
+  valor_colacao: z.string().optional(),
+  baile: z.boolean().default(false).optional(),
+  valor_baile: z.string().optional(),
+  convite_extra: z.boolean().default(false).optional(),
+  valor_convite_extra: z.string().optional(),
 });
 
 export type upsertAlunoSchema = z.infer<typeof upsertAlunoSchema>;

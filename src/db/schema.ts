@@ -94,6 +94,12 @@ export const alunosTable = pgTable("alunos", {
     sex: alunosSexEnum("sex").notNull(),    
     album: boolean("album").notNull().default(false),
     valor_album: text("valor_album"),
+    colacao: boolean("colacao").notNull().default(false),
+    valor_colacao: text("valor_colacao"),
+    baile: boolean("baile").notNull().default(false),
+    valor_baile: text("valor_baile"),
+    convite_extra: boolean("convite_extra").notNull().default(false),
+    valor_convite_extra: text("valor_convite_extra"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updateAt: timestamp("update_at").notNull().defaultNow().$onUpdate(() => new Date()),
 });

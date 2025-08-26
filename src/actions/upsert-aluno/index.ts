@@ -31,6 +31,12 @@ export const upsertAluno = actionClient
         sex: parsedInput.sex,
         album: parsedInput.album ?? false,
         valor_album: parsedInput.valor_album,
+        colacao: parsedInput.colacao ?? false,
+        valor_colacao: parsedInput.valor_colacao,
+        baile: parsedInput.baile ?? false,
+        valor_baile: parsedInput.valor_baile,
+        convite_extra: parsedInput.convite_extra ?? false,
+        valor_convite_extra: parsedInput.valor_convite_extra,
       })
       .onConflictDoUpdate({
         target: alunosTable.id,
@@ -43,6 +49,12 @@ export const upsertAluno = actionClient
           escola: parsedInput.escola,
           album: parsedInput.album ?? false,
           valor_album: parsedInput.valor_album,
+          colacao: parsedInput.colacao ?? false,
+          valor_colacao: parsedInput.valor_colacao,
+          baile: parsedInput.baile ?? false,
+          valor_baile: parsedInput.valor_baile,
+          convite_extra: parsedInput.convite_extra ?? false,
+          valor_convite_extra: parsedInput.valor_convite_extra,
         },
       });
     revalidatePath("/alunos");

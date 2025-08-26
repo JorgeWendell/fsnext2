@@ -38,6 +38,7 @@ interface UpsertFinanceFormProps {
   finance?: typeof financesTable.$inferSelect;
   alunoId: string;
   onSuccess: () => void;
+  defaultValueTotal?: string;
 }
 
 const upsertFinanceSchema = z.object({
@@ -50,7 +51,7 @@ const upsertFinanceSchema = z.object({
 
 type UpsertFinanceInput = z.infer<typeof upsertFinanceSchema>;
 
-const UpsertFinanceForm = ({ finance, alunoId, onSuccess }: UpsertFinanceFormProps) => {
+const UpsertFinanceForm = ({ finance, alunoId, onSuccess, defaultValueTotal }: UpsertFinanceFormProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedMethod, setSelectedMethod] = useState<string>("");
   const [firstDueDate, setFirstDueDate] = useState<string>("");
@@ -61,7 +62,7 @@ const UpsertFinanceForm = ({ finance, alunoId, onSuccess }: UpsertFinanceFormPro
       id: finance?.id || undefined,
       method: finance?.method || "pix",
       bank_slip: finance?.bank_slip || undefined,
-      valueTotal: finance?.valueTotal || "",
+      valueTotal: finance?.valueTotal || defaultValueTotal || "",
       alunoId: alunoId,
     },
   });
@@ -139,7 +140,10 @@ const UpsertFinanceForm = ({ finance, alunoId, onSuccess }: UpsertFinanceFormPro
     if (finance) {
       setSelectedMethod(finance.method);
     }
-  }, [finance]);
+    if (!finance && defaultValueTotal && !form.getValues("valueTotal")) {
+      form.setValue("valueTotal", defaultValueTotal);
+    }
+  }, [finance, defaultValueTotal, form]);
 
   return (
     <>

@@ -1,5 +1,11 @@
 "use client";
+import { addMonths, format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import { Search } from "lucide-react";
 import { useMemo, useState } from "react";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -10,9 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { alunosTable, financesTable } from "@/db/schema";
-import { Search } from "lucide-react";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
+
 import ReportsTable from "./reports-table";
 
 type Escola = { id: string; name: string };
@@ -52,58 +56,138 @@ const ReportsWithSearch = ({ alunos, escolas, finances, onRefresh }: Props) => {
      doc.setFont("helvetica", "normal");
      doc.text(`Nome da Escola: ${schoolName}`, 14, 25);
 
-    // Preparar dados para a tabela
-    const tableData = alunosDaEscola.map((aluno, index) => {
-      const alunoFinances = finances.filter(f => f.alunoId === aluno.id);
-      const totalAluno = alunoFinances.reduce((s, f) => s + (parseFloat(f.valueTotal) || 0), 0);
-      
-      // Pegar o primeiro pagamento para data e método
-      const primeiroPagamento = alunoFinances[0];
-      const metodoPagamento = primeiroPagamento?.method || "-";
-      const dataPrimeiroPagamento = primeiroPagamento?.createdAt 
-        ? new Date(primeiroPagamento.createdAt).toLocaleDateString('pt-BR')
-        : "-";
-      
-      return [
-        `${aluno.name} ${index + 1}`, // Nome do aluno com número
-        aluno.class, // Classe
-        metodoPagamento.toUpperCase(), // Método de pagamento em maiúsculo
-        dataPrimeiroPagamento, // Data do primeiro pagamento
-        currency(totalAluno).replace("R$", "").trim() // Valor total sem R$
-      ];
+    // Espaçamento inicial para a tabela de meses
+    const finalY = 30;
+
+    // Pagamentos mês a mês por aluno (Mês 1 = mês do primeiro pagamento do aluno; Mês N = +N-1)
+    const monthsCount = 12;
+    
+    // Criar cabeçalhos dinâmicos baseados no primeiro pagamento de cada aluno
+    const monthBody = alunosDaEscola.map((aluno) => {
+      const alunoFinances = finances.filter((f) => f.alunoId === aluno.id);
+      // ordenar por data e pegar o primeiro pagamento
+      const first = alunoFinances
+        .slice()
+        .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())[0];
+
+      const row: (string | number)[] = [aluno.name, aluno.class];
+      if (!first) {
+        // sem pagamentos: preencher com vazio
+        for (let i = 0; i < monthsCount; i++) row.push("");
+        return { row: row as (string | number)[], firstDate: null };
+      }
+
+      const firstDate = new Date(first.createdAt);
+      for (let i = 0; i < monthsCount; i++) {
+        const ref = addMonths(firstDate, i);
+        const refMonth = ref.getMonth();
+        const refYear = ref.getFullYear();
+        
+        let monthTotal = 0;
+        
+        // Processar pagamentos regulares deste mês
+        const monthPayments = alunoFinances.filter((f) => {
+          const d = new Date(f.createdAt);
+          return d.getMonth() === refMonth && d.getFullYear() === refYear;
+        });
+        
+        monthPayments.forEach(payment => {
+          if (payment.method !== "bank_slip") {
+            // Pagamentos não-boleto: adicionar valor total
+            monthTotal += parseFloat(payment.valueTotal) || 0;
+          }
+        });
+        
+        // Processar boletos parcelados - SOMENTE se o checkbox estiver marcado como pago
+        const boletos = alunoFinances.filter(f => f.method === "bank_slip");
+        boletos.forEach(boleto => {
+          const boletoDate = new Date(boleto.createdAt);
+          const boletoMonth = boletoDate.getMonth();
+          const boletoYear = boletoDate.getFullYear();
+          
+          // Verificar se existe status das parcelas salvo
+          const parcelasPagas = boleto.parcelasPagas ? JSON.parse(boleto.parcelasPagas) : {};
+          
+          // Calcular em qual mês esta parcela vence
+          const parcelas = parseInt(boleto.bank_slip || "1");
+          const valorParcela = (parseFloat(boleto.valueTotal) || 0) / parcelas;
+          
+          for (let p = 0; p < parcelas; p++) {
+            const parcela = p + 1;
+            const vencimentoDate = addMonths(boletoDate, p);
+            const vencimentoMonth = vencimentoDate.getMonth();
+            const vencimentoYear = vencimentoDate.getFullYear();
+            
+            // Se o vencimento desta parcela é no mês atual (i) E o checkbox está marcado como pago
+            if (vencimentoMonth === refMonth && vencimentoYear === refYear && parcelasPagas[parcela] === true) {
+              monthTotal += valorParcela;
+            }
+          }
+        });
+        
+        row.push(monthTotal > 0 ? currency(monthTotal).replace("R$", "").trim() : "");
+      }
+      return { row: row as (string | number)[], firstDate };
     });
 
-    // Calcular total da escola
-    const totalEscola = alunosDaEscola.reduce((total, aluno) => {
-      const alunoFinances = finances.filter(f => f.alunoId === aluno.id);
-      return total + alunoFinances.reduce((s, f) => s + (parseFloat(f.valueTotal) || 0), 0);
-    }, 0);
+    // Criar cabeçalho baseado no primeiro aluno com pagamentos
+    const firstAlunoWithPayments = monthBody.find(item => item.firstDate !== null);
+    let monthHeader = ["Aluno", "Classe"];
+    
+    if (firstAlunoWithPayments?.firstDate) {
+      const firstDate = firstAlunoWithPayments.firstDate;
+      for (let i = 0; i < monthsCount; i++) {
+        const monthDate = addMonths(firstDate, i);
+        const monthName = format(monthDate, 'MMM/yy', { locale: ptBR });
+        monthHeader.push(monthName);
+      }
+    } else {
+      // Fallback se não houver pagamentos
+      monthHeader = ["Aluno", "Classe", ...Array.from({ length: monthsCount }, (_, i) => `Mês ${i + 1}`)];
+    }
 
-    // Criar tabela
+    // Extrair apenas as rows para o body
+    const monthBodyRows = monthBody.map(item => item.row);
+
+    // Calcular totais mensais
+    const monthlyTotals = Array(monthsCount).fill(0);
+    monthBodyRows.forEach(row => {
+      for (let i = 0; i < monthsCount; i++) {
+        const value = row[i + 2]; // +2 porque os primeiros são "Aluno" e "Classe"
+        if (value && value !== "") {
+          // Remover formatação de moeda e converter para número
+          const numericValue = parseFloat(value.toString().replace(/[^\d,]/g, '').replace(',', '.'));
+          if (!isNaN(numericValue)) {
+            monthlyTotals[i] += numericValue;
+          }
+        }
+      }
+    });
+
+    // Criar linha de total
+    const totalRow = ["TOTAL", "", ...monthlyTotals.map(total => 
+      total > 0 ? currency(total).replace("R$", "").trim() : ""
+    )];
+
+    // Adicionar linha de total ao body
+    const bodyWithTotal = [...monthBodyRows, totalRow];
+
+    const startY = finalY;
     autoTable(doc, {
-      startY: 40,
-      head: [["Aluno", "Classe", "Metodo de Pagamento", "Data primeiro pagamento", "Valor total"]],
-      body: tableData,
-      styles: { 
-        fontSize: 10,
-        cellPadding: 3
-      },
-      headStyles: {
-        fillColor: [41, 128, 185], // Cor azul escura para o cabeçalho
-        textColor: 255,
-        fontStyle: 'bold'
-      },
-      alternateRowStyles: {
-        fillColor: [245, 245, 245]
-      },
-      margin: { top: 40, right: 14, bottom: 20, left: 14 }
+      startY: startY + 5,
+      head: [monthHeader],
+      body: bodyWithTotal,
+      styles: { fontSize: 9, cellPadding: 2 },
+      headStyles: { fillColor: [41, 128, 185], textColor: 255, fontStyle: 'bold' },
+      alternateRowStyles: { fillColor: [245, 245, 245] },
+      margin: { top: 40, right: 14, bottom: 20, left: 14 },
+      didParseCell: function(data) {
+        // Aplicar negrito na última linha (total)
+        if (data.row.index === monthBodyRows.length) {
+          data.cell.styles.fontStyle = 'bold';
+        }
+      }
     });
-
-    // Adicionar total da escola no final
-    const finalY = (doc as unknown as { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ?? 250;
-    doc.setFontSize(12);
-    doc.setFont("helvetica", "bold");
-    doc.text(`Total da Escola: ${currency(totalEscola)}`, 14, finalY + 15);
     
          doc.save(`relatorio-escola-${schoolName}.pdf`);
    };

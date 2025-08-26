@@ -36,7 +36,19 @@ const AlunosWithSearch = ({ alunos, escolas }: AlunosWithSearchProps) => {
       aluno.phone.toLowerCase().includes(searchLower) ||
       aluno.address.toLowerCase().includes(searchLower) ||
       getEscolaName(aluno.escola).toLowerCase().includes(searchLower) ||
-      formatSex(aluno.sex).toLowerCase().includes(searchLower)
+      formatSex(aluno.sex).toLowerCase().includes(searchLower) ||
+      ((aluno as any)?.album ? "sim" : "não").includes(searchLower) ||
+      ((aluno as any)?.colacao ? "sim" : "não").includes(searchLower) ||
+      ((aluno as any)?.baile ? "sim" : "não").includes(searchLower) ||
+      ((aluno as any)?.convite_extra ? "sim" : "não").includes(searchLower) ||
+      ((aluno as any)?.valor_album || "").includes(searchLower) ||
+      ((aluno as any)?.valor_colacao || "").includes(searchLower) ||
+      ((aluno as any)?.valor_baile || "").includes(searchLower) ||
+      ((aluno as any)?.valor_convite_extra || "").includes(searchLower) ||
+      "álbum".includes(searchLower) ||
+      "colação".includes(searchLower) ||
+      "baile".includes(searchLower) ||
+      "convite extra".includes(searchLower)
     );
   });
 

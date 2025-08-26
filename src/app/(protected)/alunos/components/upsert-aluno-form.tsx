@@ -1,11 +1,20 @@
 "use client";
+import * as React from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useAction } from "next-safe-action/hooks";
+import { useForm } from "react-hook-form";
+import { toast } from "sonner";
+import z from "zod";
+import { upsertAluno } from "@/actions/upsert-aluno";
 import { Button } from "@/components/ui/button";
 import {
+  Dialog,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Form,
@@ -16,14 +25,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import z from "zod";
-import { useAction } from "next-safe-action/hooks";
-import { toast } from "sonner";
-import { alunosTable } from "@/db/schema";
-
-import { upsertAluno } from "@/actions/upsert-aluno";
 import {
   Select,
   SelectContent,
@@ -33,6 +34,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { alunosTable } from "@/db/schema";
 
 const formSchema = z.object({
   name: z.string().trim().min(1, { message: "Nome é obrigatório" }),
@@ -46,12 +48,36 @@ const formSchema = z.object({
     .min(1, { message: "Escola é obrigatória" }),
   album: z.boolean().optional(),
   valor_album: z.string().optional(),
+  colacao: z.boolean().optional(),
+  valor_colacao: z.string().optional(),
+  baile: z.boolean().optional(),
+  valor_baile: z.string().optional(),
+  convite_extra: z.boolean().optional(),
+  valor_convite_extra: z.string().optional(),
 }).refine((data) => {
   if (data.album) {
     return !!data.valor_album && data.valor_album.trim() !== "";
   }
   return true;
-}, { path: ["valor_album"], message: "Informe o valor do álbum" });
+}, { path: ["valor_album"], message: "Informe o valor do álbum" })
+.refine((data) => {
+  if (data.colacao) {
+    return !!data.valor_colacao && data.valor_colacao.trim() !== "";
+  }
+  return true;
+}, { path: ["valor_colacao"], message: "Informe o valor da colação" })
+.refine((data) => {
+  if (data.baile) {
+    return !!data.valor_baile && data.valor_baile.trim() !== "";
+  }
+  return true;
+}, { path: ["valor_baile"], message: "Informe o valor do baile" })
+.refine((data) => {
+  if (data.convite_extra) {
+    return !!data.valor_convite_extra && data.valor_convite_extra.trim() !== "";
+  }
+  return true;
+}, { path: ["valor_convite_extra"], message: "Informe o valor do convite extra" });
 
 type FormSchema = z.infer<typeof formSchema>;
 
@@ -64,13 +90,16 @@ interface UpsertAlunoFormProps {
   aluno?: typeof alunosTable.$inferSelect;
   onSuccess?: () => void;
   escolas: Escola[];
+  financeOpenByDefault?: boolean;
 }
 
 const UpsertAlunoForm = ({
   aluno,
   onSuccess,
   escolas = [],
+  financeOpenByDefault = false,
 }: UpsertAlunoFormProps) => {
+  const [isFinanceOpen, setIsFinanceOpen] = React.useState<boolean>(financeOpenByDefault);
   const form = useForm<FormSchema>({
     shouldUnregister: true,
     resolver: zodResolver(formSchema),
@@ -79,16 +108,23 @@ const UpsertAlunoForm = ({
       class: aluno?.class ?? "",
       address: aluno?.address ?? "",
       phone: aluno?.phone ?? "",
-      sex: aluno?.sex ?? "male",
+      sex: (aluno?.sex as "male" | "female") ?? "male",
       escola: aluno?.escola ?? "",
-      album: (aluno as any)?.album ?? false,
-      valor_album: (aluno as any)?.valor_album ?? "",
+      album: aluno?.album ?? false,
+      valor_album: aluno?.valor_album ?? "",
+      colacao: aluno?.colacao ?? false,
+      valor_colacao: aluno?.valor_colacao ?? "",
+      baile: aluno?.baile ?? false,
+      valor_baile: aluno?.valor_baile ?? "",
+      convite_extra: aluno?.convite_extra ?? false,
+      valor_convite_extra: aluno?.valor_convite_extra ?? "",
     },
   });
 
   const upsertAlunoAction = useAction(upsertAluno, {
     onSuccess: () => {
       toast.success("Aluno adicionado com sucesso");
+      setIsFinanceOpen(false);
       onSuccess?.();
       form.reset();
     },
@@ -118,6 +154,42 @@ const UpsertAlunoForm = ({
     const cents = parseInt(onlyDigits, 10);
     const asNumberString = (cents / 100).toFixed(2);
     form.setValue("valor_album", asNumberString);
+  };
+
+  const handleColacaoValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value;
+    const onlyDigits = raw.replace(/\D/g, "");
+    if (!onlyDigits) {
+      form.setValue("valor_colacao", "");
+      return;
+    }
+    const cents = parseInt(onlyDigits, 10);
+    const asNumberString = (cents / 100).toFixed(2);
+    form.setValue("valor_colacao", asNumberString);
+  };
+
+  const handleBaileValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value;
+    const onlyDigits = raw.replace(/\D/g, "");
+    if (!onlyDigits) {
+      form.setValue("valor_baile", "");
+      return;
+    }
+    const cents = parseInt(onlyDigits, 10);
+    const asNumberString = (cents / 100).toFixed(2);
+    form.setValue("valor_baile", asNumberString);
+  };
+
+  const handleConviteExtraValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value;
+    const onlyDigits = raw.replace(/\D/g, "");
+    if (!onlyDigits) {
+      form.setValue("valor_convite_extra", "");
+      return;
+    }
+    const cents = parseInt(onlyDigits, 10);
+    const asNumberString = (cents / 100).toFixed(2);
+    form.setValue("valor_convite_extra", asNumberString);
   };
 
   const onSubmit = (values: FormSchema) => {
@@ -243,46 +315,187 @@ const UpsertAlunoForm = ({
             )}
           />
 
-          <FormField
-            control={form.control}
-            name="album"
-            render={({ field }) => (
-              <FormItem className="flex items-center space-x-2">
-                <FormControl>
-                  <input
-                    type="checkbox"
-                    checked={Boolean(field.value)}
-                    onChange={(e) => field.onChange(e.target.checked)}
-                    className="h-4 w-4 rounded border"
-                  />
-                </FormControl>
-                <FormLabel className="!mt-0">Álbum</FormLabel>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          {form.watch("album") && (
-            <FormField
-              control={form.control}
-              name="valor_album"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Valor do Álbum</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="R$ 0,00"
-                      value={field.value ? formatCurrency(field.value) : ""}
-                      onChange={handleAlbumValueChange}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          )}
-
           <DialogFooter>
+            <Dialog open={isFinanceOpen} onOpenChange={setIsFinanceOpen}>
+              <DialogTrigger asChild>
+                <Button type="button" variant="outline">Finanças</Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Finanças do Aluno</DialogTitle>
+                  <DialogDescription>Marque os itens e informe os valores.</DialogDescription>
+                </DialogHeader>
+
+                <div className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="album"
+                    render={({ field }) => (
+                      <FormItem className="flex items-center space-x-2">
+                        <FormControl>
+                          <input
+                            type="checkbox"
+                            checked={Boolean(field.value)}
+                            onChange={(e) => field.onChange(e.target.checked)}
+                            className="h-4 w-4 rounded border"
+                          />
+                        </FormControl>
+                        <FormLabel className="!mt-0">Álbum</FormLabel>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {form.watch("album") && (
+                    <FormField
+                      control={form.control}
+                      name="valor_album"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Valor do Álbum</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="R$ 0,00"
+                              value={field.value ? formatCurrency(field.value) : ""}
+                              onChange={handleAlbumValueChange}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
+
+                  <FormField
+                    control={form.control}
+                    name="colacao"
+                    render={({ field }) => (
+                      <FormItem className="flex items-center space-x-2">
+                        <FormControl>
+                          <input
+                            type="checkbox"
+                            checked={Boolean(field.value)}
+                            onChange={(e) => field.onChange(e.target.checked)}
+                            className="h-4 w-4 rounded border"
+                          />
+                        </FormControl>
+                        <FormLabel className="!mt-0">Colação</FormLabel>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {form.watch("colacao") && (
+                    <FormField
+                      control={form.control}
+                      name="valor_colacao"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Valor da Colação</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="R$ 0,00"
+                              value={field.value ? formatCurrency(field.value) : ""}
+                              onChange={handleColacaoValueChange}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
+
+                  <FormField
+                    control={form.control}
+                    name="baile"
+                    render={({ field }) => (
+                      <FormItem className="flex items-center space-x-2">
+                        <FormControl>
+                          <input
+                            type="checkbox"
+                            checked={Boolean(field.value)}
+                            onChange={(e) => field.onChange(e.target.checked)}
+                            className="h-4 w-4 rounded border"
+                          />
+                        </FormControl>
+                        <FormLabel className="!mt-0">Baile</FormLabel>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {form.watch("baile") && (
+                    <FormField
+                      control={form.control}
+                      name="valor_baile"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Valor do Baile</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="R$ 0,00"
+                              value={field.value ? formatCurrency(field.value) : ""}
+                              onChange={handleBaileValueChange}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
+
+                  <FormField
+                    control={form.control}
+                    name="convite_extra"
+                    render={({ field }) => (
+                      <FormItem className="flex items-center space-x-2">
+                        <FormControl>
+                          <input
+                            type="checkbox"
+                            checked={Boolean(field.value)}
+                            onChange={(e) => field.onChange(e.target.checked)}
+                            className="h-4 w-4 rounded border"
+                          />
+                        </FormControl>
+                        <FormLabel className="!mt-0">Convite Extra</FormLabel>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {form.watch("convite_extra") && (
+                    <FormField
+                      control={form.control}
+                      name="valor_convite_extra"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Valor do Convite Extra</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="R$ 0,00"
+                              value={field.value ? formatCurrency(field.value) : ""}
+                              onChange={handleConviteExtraValueChange}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
+
+                  <DialogFooter>
+                    <Button
+                      type="button"
+                      onClick={form.handleSubmit(onSubmit)}
+                      disabled={upsertAlunoAction.isPending}
+                    >
+                      {upsertAlunoAction.isPending ? "Salvando..." : "Salvar Finanças"}
+                    </Button>
+                  </DialogFooter>
+                </div>
+              </DialogContent>
+            </Dialog>
+
             <Button type="submit" disabled={upsertAlunoAction.isPending}>
               {upsertAlunoAction.isPending
                 ? "Salvando..."

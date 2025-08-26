@@ -72,6 +72,28 @@ const AlunoCard = ({ aluno, escolas }: AlunoCardProps) => {
             <p className="text-sm text-muted-foreground">
               Telefone: {aluno.phone}
             </p>
+            <div className="flex gap-2 mt-1">
+              {(aluno as any)?.album && (
+                <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                  Álbum{(aluno as any)?.valor_album && ` - R$ ${parseFloat((aluno as any).valor_album).toFixed(2).replace('.', ',')}`}
+                </span>
+              )}
+              {(aluno as any)?.colacao && (
+                <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
+                  Colação{(aluno as any)?.valor_colacao && ` - R$ ${parseFloat((aluno as any).valor_colacao).toFixed(2).replace('.', ',')}`}
+                </span>
+              )}
+              {(aluno as any)?.baile && (
+                <span className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded">
+                  Baile{(aluno as any)?.valor_baile && ` - R$ ${parseFloat((aluno as any).valor_baile).toFixed(2).replace('.', ',')}`}
+                </span>
+              )}
+              {(aluno as any)?.convite_extra && (
+                <span className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded">
+                  Convite Extra{(aluno as any)?.valor_convite_extra && ` - R$ ${parseFloat((aluno as any).valor_convite_extra).toFixed(2).replace('.', ',')}`}
+                </span>
+              )}
+            </div>
           </div>
         </div>
       </CardHeader>

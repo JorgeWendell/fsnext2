@@ -82,13 +82,17 @@ const AlunosTable = ({ alunos, escolas }: AlunosTableProps) => {
             <TableHead>Telefone</TableHead>
             <TableHead>Endereço</TableHead>
             <TableHead>Sexo</TableHead>
+            <TableHead>Álbum</TableHead>
+            <TableHead>Colação</TableHead>
+            <TableHead>Baile</TableHead>
+            <TableHead>Convite Extra</TableHead>
             <TableHead className="text-right">Ações</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {alunos.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={7} className="text-center text-muted-foreground">
+              <TableCell colSpan={11} className="text-center text-muted-foreground">
                 Nenhum aluno encontrado
               </TableCell>
             </TableRow>
@@ -101,6 +105,54 @@ const AlunosTable = ({ alunos, escolas }: AlunosTableProps) => {
                 <TableCell>{aluno.phone}</TableCell>
                 <TableCell>{aluno.address}</TableCell>
                 <TableCell>{formatSex(aluno.sex)}</TableCell>
+                <TableCell>
+                  {(aluno as any)?.album ? (
+                    <div>
+                      <div>Sim</div>
+                      {(aluno as any)?.valor_album && (
+                        <div className="text-xs text-muted-foreground">
+                          R$ {parseFloat((aluno as any).valor_album).toFixed(2).replace('.', ',')}
+                        </div>
+                      )}
+                    </div>
+                  ) : "Não"}
+                </TableCell>
+                <TableCell>
+                  {(aluno as any)?.colacao ? (
+                    <div>
+                      <div>Sim</div>
+                      {(aluno as any)?.valor_colacao && (
+                        <div className="text-xs text-muted-foreground">
+                          R$ {parseFloat((aluno as any).valor_colacao).toFixed(2).replace('.', ',')}
+                        </div>
+                      )}
+                    </div>
+                  ) : "Não"}
+                </TableCell>
+                <TableCell>
+                  {(aluno as any)?.baile ? (
+                    <div>
+                      <div>Sim</div>
+                      {(aluno as any)?.valor_baile && (
+                        <div className="text-xs text-muted-foreground">
+                          R$ {parseFloat((aluno as any).valor_baile).toFixed(2).replace('.', ',')}
+                        </div>
+                      )}
+                    </div>
+                  ) : "Não"}
+                </TableCell>
+                <TableCell>
+                  {(aluno as any)?.convite_extra ? (
+                    <div>
+                      <div>Sim</div>
+                      {(aluno as any)?.valor_convite_extra && (
+                        <div className="text-xs text-muted-foreground">
+                          R$ {parseFloat((aluno as any).valor_convite_extra).toFixed(2).replace('.', ',')}
+                        </div>
+                      )}
+                    </div>
+                  ) : "Não"}
+                </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">
                     <Dialog>

@@ -1,42 +1,18 @@
 "use client";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { alunosTable, financesTable } from "@/db/schema";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { useState, useMemo } from "react";
-import { Edit, TrashIcon, Plus } from "lucide-react";
-import { useAction } from "next-safe-action/hooks";
 import { deleteFinance } from "@/actions/delete-finance";
-import { updateBoletoStatus } from "@/actions/update-boleto-status";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { alunosTable, financesTable } from "@/db/schema";
+import { format, addMonths } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { TrashIcon } from "lucide-react";
+import { useAction } from "next-safe-action/hooks";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import UpsertFinanceForm from "./upsert-finance-form";
-import { addMonths } from "date-fns";
+import BoletosPreviewDialog from "./boletos-preview-dialog";
 
 interface FinanceiroDialogProps {
   aluno: typeof alunosTable.$inferSelect;
@@ -46,28 +22,12 @@ interface FinanceiroDialogProps {
 }
 
 const FinanceiroDialog = ({ aluno, finances, onClose, onRefresh }: FinanceiroDialogProps) => {
-  const [editingFinance, setEditingFinance] = useState<typeof financesTable.$inferSelect | null>(null);
-  const [boletoStatus, setBoletoStatus] = useState<Record<string, boolean>>({});
+  // local: reservado para futuras edições inline
+  // const [editingFinance, setEditingFinance] = useState<typeof financesTable.$inferSelect | null>(null);
 
-  // Carregar status das parcelas salvas
-  const loadBoletoStatus = useMemo(() => {
-    const bankSlipFinance = finances.find(f => f.method === "bank_slip");
-    if (!bankSlipFinance?.parcelasPagas) return {};
+  const [isBoletosDialogOpen, setIsBoletosDialogOpen] = useState(false);
 
-    try {
-      const savedStatus = JSON.parse(bankSlipFinance.parcelasPagas);
-      const statusMap: Record<string, boolean> = {};
-      
-      Object.entries(savedStatus).forEach(([parcela, isPaid]) => {
-        statusMap[`${bankSlipFinance.id}-${parcela}`] = isPaid as boolean;
-      });
-      
-      return statusMap;
-    } catch (error) {
-      console.error("Erro ao carregar status das parcelas:", error);
-      return {};
-    }
-  }, [finances]);
+
 
   const deleteFinanceAction = useAction(deleteFinance, {
     onSuccess: () => {
@@ -79,26 +39,18 @@ const FinanceiroDialog = ({ aluno, finances, onClose, onRefresh }: FinanceiroDia
     },
   });
 
-  const updateBoletoStatusAction = useAction(updateBoletoStatus, {
-    onSuccess: () => {
-      toast.success("Status do boleto atualizado");
-      onRefresh();
-    },
-    onError: () => {
-      toast.error("Erro ao atualizar status do boleto");
-    },
-  });
+
 
   const handleDeleteFinance = (financeId: string) => {
     deleteFinanceAction.execute({ id: financeId });
   };
 
-  const handleEditFinance = (finance: typeof financesTable.$inferSelect) => {
-    setEditingFinance(finance);
-  };
+  // const handleEditFinance = (finance: typeof financesTable.$inferSelect) => {
+  //   setEditingFinance(finance);
+  // };
 
   const handleCloseEditDialog = () => {
-    setEditingFinance(null);
+    // noop: edição inline desativada
   };
 
   const handleSuccess = () => {
@@ -106,27 +58,16 @@ const FinanceiroDialog = ({ aluno, finances, onClose, onRefresh }: FinanceiroDia
     handleCloseEditDialog();
   };
 
-  const handleBoletoStatusChange = (financeId: string, parcela: number, isPaid: boolean) => {
-    setBoletoStatus(prev => ({
-      ...prev,
-      [`${financeId}-${parcela}`]: isPaid
-    }));
-    
-    updateBoletoStatusAction.execute({
-      financeId,
-      parcela,
-      isPaid
-    });
-  };
+
   const formatMethod = (method: string) => {
-    const methods = {
+    const methods: Record<string, string> = {
       pix: "PIX",
       debit: "Débito",
       creditvista: "Crédito à Vista",
       creditparc: "Crédito Parcelado",
-      bank_slip: "Boleto Bancário"
+      bank_slip: "Boleto Bancário",
     };
-    return (methods as any)[method] || method;
+    return methods[method] || method;
   };
 
   const formatBankSlip = (bankSlip: string | null) => {
@@ -150,39 +91,27 @@ const FinanceiroDialog = ({ aluno, finances, onClose, onRefresh }: FinanceiroDia
     return sum + (parseFloat(finance.valueTotal) || 0);
   }, 0);
 
-  // Pré-visualização de boletos (mensal) quando houver registros de boleto bancário
-  const boletosPreview = useMemo(() => {
-    const bankSlip = finances.filter((f) => f.method === "bank_slip");
-    if (bankSlip.length === 0) return [] as { label: string; date: string; value: string }[];
+  // Itens de finanças definidos no cadastro do aluno
+  type AlunoFinanceItem = { label: string; enabled: boolean; value: string | null };
+  const alunoFinanceItems: AlunoFinanceItem[] = [
+    { label: 'Álbum', enabled: Boolean((aluno as { album?: boolean }).album), value: (aluno as { valor_album?: string | null }).valor_album ?? null },
+    { label: 'Colação', enabled: Boolean((aluno as { colacao?: boolean }).colacao), value: (aluno as { valor_colacao?: string | null }).valor_colacao ?? null },
+    { label: 'Baile', enabled: Boolean((aluno as { baile?: boolean }).baile), value: (aluno as { valor_baile?: string | null }).valor_baile ?? null },
+    { label: 'Convite Extra', enabled: Boolean((aluno as { convite_extra?: boolean }).convite_extra), value: (aluno as { valor_convite_extra?: string | null }).valor_convite_extra ?? null },
+  ];
 
-    const earliest = bankSlip.reduce((min, f) => (new Date(f.createdAt) < new Date(min.createdAt) ? f : min), bankSlip[0]);
-    const maxParcela = bankSlip.reduce((m, f) => {
-      const n = parseInt((f.bank_slip as any) || "0", 10);
-      return isNaN(n) ? m : Math.max(m, n);
-    }, 0);
+  const alunoItemsTotal = alunoFinanceItems.reduce((sum, item) => {
+    if (!item.enabled) return sum;
+    const v = parseFloat(item.value || '0');
+    return sum + (isNaN(v) ? 0 : v);
+  }, 0);
 
-    if (maxParcela <= 0) return [] as { label: string; date: string; value: string }[];
-
-    // Usa o primeiro valorTotal como base para dividir pelas parcelas
-    const baseTotal = parseFloat(bankSlip[0].valueTotal) || 0;
-    const parcelaValor = maxParcela > 0 ? baseTotal / maxParcela : 0;
-
-    const start = new Date(earliest.createdAt);
-    const list: { label: string; date: string; value: string }[] = [];
-    for (let i = 0; i < maxParcela; i++) {
-      const due = addMonths(start, i);
-      list.push({
-        label: `${i + 1}ª parcela`,
-        date: format(due, 'dd/MM/yyyy', { locale: ptBR }),
-        value: new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(parcelaValor),
-      });
-    }
-    return list;
-  }, [finances]);
+  // Verificar se há boletos para mostrar o botão
+  const hasBoletos = finances.some(f => f.method === "bank_slip");
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="w-[95vw] max-w-6xl h-[90vh] overflow-y-visible">
+      <DialogContent className="w-[95vw] max-w-full h-[70vh] overflow-y-visible">
         <DialogHeader>
           <div className="flex justify-between items-start">
             <div>
@@ -194,6 +123,7 @@ const FinanceiroDialog = ({ aluno, finances, onClose, onRefresh }: FinanceiroDia
             <UpsertFinanceForm
               alunoId={aluno.id}
               onSuccess={onRefresh}
+              defaultValueTotal={alunoItemsTotal > 0 ? alunoItemsTotal.toFixed(2) : undefined}
             />
           </div>
         </DialogHeader>
@@ -210,11 +140,28 @@ const FinanceiroDialog = ({ aluno, finances, onClose, onRefresh }: FinanceiroDia
               <p className="text-lg">{aluno.class}</p>
             </div>
             <div>
-              <h4 className="font-semibold text-sm text-muted-foreground">Total Pago</h4>
+              <h4 className="font-semibold text-sm text-muted-foreground">Total a Pagar</h4>
               <p className="text-lg font-bold text-green-600">
-                {formatValue(totalValue.toString())}
+                {formatValue(alunoItemsTotal.toFixed(2))}
               </p>
             </div>
+          </div>
+
+          {/* Itens de Finanças do Aluno */}
+          <div className="p-4 border rounded-lg">
+            
+            {alunoFinanceItems.every(i => !i.enabled) ? (
+              <div className="text-sm text-muted-foreground">Nenhum item marcado no cadastro do aluno.</div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {alunoFinanceItems.filter(i => i.enabled).map((item) => (
+                  <div key={item.label} className="flex items-center justify-between rounded-md border p-3">
+                    <span className="font-medium">{item.label}</span>
+                    <span className="font-semibold">{formatValue(((item.value as string) || '0'))}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Tabela de Transações */}
@@ -299,37 +246,17 @@ const FinanceiroDialog = ({ aluno, finances, onClose, onRefresh }: FinanceiroDia
             )}
           </div>
 
-          {boletosPreview.length > 0 && (
-            <div className="space-y-2 rounded-md border p-3">
-              <div className="text-sm font-medium">Boletos (pré-visualização)</div>
-              <ul className="text-sm space-y-1">
-                                 {boletosPreview.map((p, idx) => {
-                   const financeId = finances.find(f => f.method === "bank_slip")?.id || "";
-                   const checkboxKey = `${financeId}-${idx + 1}`;
-                   const isPaid = loadBoletoStatus[checkboxKey] || boletoStatus[checkboxKey] || false;
-                  
-                  return (
-                    <li key={idx} className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          checked={isPaid}
-                          onChange={(e) => handleBoletoStatusChange(financeId, idx + 1, e.target.checked)}
-                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                        />
-                        <span className={isPaid ? "line-through text-gray-500" : ""}>
-                          {p.label} • {p.date}
-                        </span>
-                      </div>
-                      <span className={`font-medium ${isPaid ? "text-green-600" : ""}`}>
-                        {p.value}
-                      </span>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          )}
+                     {hasBoletos && (
+             <div className="flex justify-center">
+               <Button 
+                 variant="outline" 
+                 onClick={() => setIsBoletosDialogOpen(true)}
+                 className="w-full max-w-xs"
+               >
+                 Gerenciar Boletos
+               </Button>
+             </div>
+           )}
 
           {/* Resumo */}
           {finances.length > 0 && (
@@ -342,10 +269,18 @@ const FinanceiroDialog = ({ aluno, finances, onClose, onRefresh }: FinanceiroDia
               </div>
             </div>
           )}
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-};
+                 </div>
+       </DialogContent>
+
+       {/* Dialog de Boletos */}
+       <BoletosPreviewDialog
+         finances={finances}
+         isOpen={isBoletosDialogOpen}
+         onClose={() => setIsBoletosDialogOpen(false)}
+         onRefresh={onRefresh}
+       />
+     </Dialog>
+   );
+ };
 
 export default FinanceiroDialog;

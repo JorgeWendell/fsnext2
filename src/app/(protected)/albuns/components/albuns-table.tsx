@@ -4,7 +4,6 @@ import { alunosTable } from "@/db/schema";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import AlbumEditDialog from "./album-edit-dialog";
-import jsPDF from "jspdf";
 import { useState } from "react";
 
 interface Escola { id: string; name: string }
@@ -20,17 +19,7 @@ const AlbunsTable = ({ alunos, escolas }: Props) => {
   const getEscolaName = (id: string) => escolas.find(e=>e.id===id)?.name ?? "-";
   const [openAlunoId, setOpenAlunoId] = useState<string | null>(null);
 
-  const handlePdf = (aluno: any) => {
-    const doc = new jsPDF();
-    doc.text("Recibo de Álbum", 14, 14);
-    doc.text(`Aluno: ${aluno.name}`, 14, 24);
-    doc.text(`Escola: ${getEscolaName(aluno.escola)}`, 14, 32);
-    doc.text(`Classe: ${aluno.class}`, 14, 40);
-    doc.text(`Valor do Álbum: ${currency(aluno.valor_album)}`, 14, 52);
-    const date = new Date().toLocaleDateString('pt-BR');
-    doc.text(`Data: ${date}`, 14, 60);
-    doc.save(`recibo-album-${aluno.name}.pdf`);
-  };
+  // PDF removido a pedido
 
   return (
     <Table>
@@ -65,7 +54,7 @@ const AlbunsTable = ({ alunos, escolas }: Props) => {
                       <AlbumEditDialog aluno={aluno as any} onClose={()=>setOpenAlunoId(null)} />
                     )}
                   </Dialog>
-                  <Button size="sm" onClick={()=>handlePdf(aluno as any)}>PDF</Button>
+                  {/* Botão PDF removido */}
                 </div>
               </TableCell>
             </TableRow>

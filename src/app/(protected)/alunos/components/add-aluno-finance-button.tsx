@@ -1,0 +1,37 @@
+"use client";
+
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogTrigger } from "@/components/ui/dialog";
+import { DollarSign } from "lucide-react";
+import UpsertAlunoForm from "./upsert-aluno-form";
+
+interface AddAlunoFinanceButtonProps {
+  escolas: Array<{
+    id: string;
+    name: string;
+  }>;
+}
+
+const AddAlunoFinanceButton = ({ escolas }: AddAlunoFinanceButtonProps) => {
+  const [isOpen, setIsOpen] = useState(false);
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline">
+          <DollarSign />
+          Finanças
+        </Button>
+      </DialogTrigger>
+      <UpsertAlunoForm
+        onSuccess={() => setIsOpen(false)}
+        escolas={escolas}
+        financeOpenByDefault
+      />
+    </Dialog>
+  );
+};
+
+export default AddAlunoFinanceButton;
+
+
