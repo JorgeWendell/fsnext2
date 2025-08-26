@@ -1,7 +1,9 @@
 "use client";
-import { useRouter } from "next/navigation";
-import AlbunsWithSearch from "./albuns-with-search";
+// useRouter import removed as it's not being used
+
 import { alunosTable, escolasTable } from "@/db/schema";
+
+import AlbunsWithSearch from "./albuns-with-search";
 
 interface Props {
   alunos: typeof alunosTable.$inferSelect[];
@@ -9,10 +11,10 @@ interface Props {
 }
 
 const AlbunsWrapper = ({ alunos, escolas }: Props) => {
-  const router = useRouter();
-  const onRefresh = () => router.refresh();
+  // router removed as it's not being used
+  // onRefresh removed as it's not being used
   return (
-    <AlbunsWithSearch alunos={alunos} escolas={escolas} onRefresh={onRefresh} />
+    <AlbunsWithSearch alunos={alunos} escolas={escolas} />
   );
 };
 

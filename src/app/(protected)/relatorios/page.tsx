@@ -1,9 +1,11 @@
-import { PageActions, PageContainer, PageContent, PageDescription, PageHeader, PageHeaderContent, PageTitle } from "@/components/ui/page-container";
-import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+
+import { PageContainer, PageContent, PageDescription, PageHeader, PageHeaderContent, PageTitle } from "@/components/ui/page-container";
 import { db } from "@/db";
 import { alunosTable, escolasTable, financesTable } from "@/db/schema";
+import { auth } from "@/lib/auth";
+
 import ReportsWrapper from "./components/reports-wrapper";
 
 const ReportsPage = async () => {
@@ -18,7 +20,7 @@ const ReportsPage = async () => {
     escolas = await db.select().from(escolasTable);
     alunos = await db.query.alunosTable.findMany();
     finances = await db.select().from(financesTable);
-  } catch (e) {
+  } catch {
     alunos = [];
     escolas = [];
     finances = [];
@@ -31,9 +33,6 @@ const ReportsPage = async () => {
           <PageTitle>Relatórios</PageTitle>
           <PageDescription>Analise e exporte relatórios financeiros</PageDescription>
         </PageHeaderContent>
-        <PageActions>
-          {/* Ações da página podem ser adicionadas aqui */}
-        </PageActions>
       </PageHeader>
       <PageContent>
         <ReportsWrapper alunos={alunos} escolas={escolas} finances={finances} />

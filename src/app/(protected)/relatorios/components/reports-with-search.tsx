@@ -4,7 +4,7 @@ import { ptBR } from "date-fns/locale";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { Search } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,16 +25,15 @@ interface Props {
   alunos: typeof alunosTable.$inferSelect[];
   escolas: Escola[];
   finances: typeof financesTable.$inferSelect[];
-  onRefresh: () => void;
 }
 
 const currency = (v: string | number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL"}).format(typeof v === 'string' ? parseFloat(v||'0') : v);
 
-const ReportsWithSearch = ({ alunos, escolas, finances, onRefresh }: Props) => {
+const ReportsWithSearch = ({ alunos, escolas, finances }: Props) => {
   const [term, setTerm] = useState("");
   const [schoolId, setSchoolId] = useState<string>("");
 
-  const getEscolaName = (id: string) => escolas.find(e=>e.id===id)?.name ?? "-";
+  const getEscolaName = useCallback((id: string) => escolas.find(e=>e.id===id)?.name ?? "-", [escolas]);
 
   const filteredAlunos = useMemo(() => {
     const t = term.toLowerCase();
@@ -42,7 +41,7 @@ const ReportsWithSearch = ({ alunos, escolas, finances, onRefresh }: Props) => {
       a.name.toLowerCase().includes(t) ||
       getEscolaName(a.escola).toLowerCase().includes(t)
     );
-  }, [alunos, term]);
+  }, [alunos, term, getEscolaName]);
 
     const handleExportSchoolPdf = () => {
     if (!schoolId) return;
@@ -101,9 +100,8 @@ const ReportsWithSearch = ({ alunos, escolas, finances, onRefresh }: Props) => {
         // Processar boletos parcelados - SOMENTE se o checkbox estiver marcado como pago
         const boletos = alunoFinances.filter(f => f.method === "bank_slip");
         boletos.forEach(boleto => {
-          const boletoDate = new Date(boleto.createdAt);
-          const boletoMonth = boletoDate.getMonth();
-          const boletoYear = boletoDate.getFullYear();
+                  const boletoDate = new Date(boleto.createdAt);
+        // boletoMonth and boletoYear removed as they're not being used
           
           // Verificar se existe status das parcelas salvo
           const parcelasPagas = boleto.parcelasPagas ? JSON.parse(boleto.parcelasPagas) : {};

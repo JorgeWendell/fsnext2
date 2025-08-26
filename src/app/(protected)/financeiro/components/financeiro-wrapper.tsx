@@ -1,7 +1,9 @@
 "use client";
 import { useRouter } from "next/navigation";
-import FinanceiroWithSearch from "./financeiro-with-search";
+
 import { alunosTable, escolasTable, financesTable } from "@/db/schema";
+
+import FinanceiroWithSearch from "./financeiro-with-search";
 
 interface FinanceiroWrapperProps {
   alunos: typeof alunosTable.$inferSelect[];

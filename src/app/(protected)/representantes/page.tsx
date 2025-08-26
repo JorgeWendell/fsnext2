@@ -1,3 +1,6 @@
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
+
 import {
   PageActions,
   PageContainer,
@@ -7,12 +10,10 @@ import {
   PageHeaderContent,
   PageTitle,
 } from "@/components/ui/page-container";
+import { db } from "@/db";
 import { auth } from "@/lib/auth";
 
-import { headers } from "next/headers";
-import { redirect } from "next/navigation";
 import AddRepresentanteButton from "./components/add-repre-button";
-import { db } from "@/db";
 import RepresentanteCard from "./components/repre-card";
 
 const RepresentantesPage = async () => {

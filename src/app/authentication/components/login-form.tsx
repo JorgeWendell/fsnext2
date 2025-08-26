@@ -60,13 +60,7 @@ const LoginForm = () => {
     );
   };
 
-  const handleGoogleLogin = async () => {
-    await authClient.signIn.social({
-      provider: "google",
-      callbackURL: "/dashboard",
-      scopes: ["email", "profile"],
-    });
-  };
+  // handleGoogleLogin removed as it's not being used
 
   return (
     <Card>

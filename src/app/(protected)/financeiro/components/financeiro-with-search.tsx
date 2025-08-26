@@ -1,8 +1,10 @@
 "use client";
-import { useState } from "react";
-import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
+import { useState } from "react";
+
+import { Input } from "@/components/ui/input";
 import { alunosTable, financesTable } from "@/db/schema";
+
 import FinanceiroTable from "./financeiro-table";
 
 type Escola = {

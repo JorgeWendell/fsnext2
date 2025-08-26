@@ -1,3 +1,6 @@
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
+
 import {
   PageActions,
   PageContainer,
@@ -7,16 +10,12 @@ import {
   PageHeaderContent,
   PageTitle,
 } from "@/components/ui/page-container";
+import { db } from "@/db";
+import { escolasTable, representantesTable } from "@/db/schema";
 import { auth } from "@/lib/auth";
 
-import { headers } from "next/headers";
-import { redirect } from "next/navigation";
-
-import { db } from "@/db";
-import { representantesTable } from "@/db/schema";
-
-import EscolaCard from "./components/escola-card";
 import AddEscolaButton from "./components/add-escola-button";
+import EscolaCard from "./components/escola-card";
 
 const EscolasPage = async () => {
   const session = await auth.api.getSession({
@@ -26,7 +25,8 @@ const EscolasPage = async () => {
     redirect("/authentication");
   }
 
-  let escolas, representantes;
+  let escolas: typeof escolasTable.$inferSelect[] = [];
+  let representantes: typeof representantesTable.$inferSelect[] = [];
   
   try {
     // Verificar se a conexão está funcionando

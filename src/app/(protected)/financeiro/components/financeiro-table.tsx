@@ -1,5 +1,9 @@
 "use client";
+import { DollarSign } from "lucide-react";
+import { useState } from "react";
+
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import {
   Table,
   TableBody,
@@ -8,10 +12,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { alunosTable, financesTable } from "@/db/schema";
-import { useState } from "react";
-import { DollarSign } from "lucide-react";
+
 import FinanceiroDialog from "./financeiro-dialog";
 
 type Escola = {
@@ -32,12 +34,8 @@ interface FinanceiroTableProps {
 
 const FinanceiroTable = ({ 
   alunos, 
-  escolas, 
   finances,
   getEscolaName,
-  getAlunoName,
-  getAlunoClass,
-  getAlunoEscola,
   onRefresh
 }: FinanceiroTableProps) => {
   const [selectedAluno, setSelectedAluno] = useState<typeof alunosTable.$inferSelect | null>(null);

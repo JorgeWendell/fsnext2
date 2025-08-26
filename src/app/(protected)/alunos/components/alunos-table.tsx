@@ -1,13 +1,10 @@
 "use client";
-import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Edit,TrashIcon } from "lucide-react";
+import { useAction } from "next-safe-action/hooks";
+import { useState } from "react";
+import { toast } from "sonner";
+
+import { deleteAluno } from "@/actions/delete-aluno";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,14 +16,19 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { alunosTable } from "@/db/schema";
-import { useState } from "react";
-import { TrashIcon, Edit } from "lucide-react";
-import { toast } from "sonner";
-import { useAction } from "next-safe-action/hooks";
+
 import UpsertAlunoForm from "./upsert-aluno-form";
-import { deleteAluno } from "@/actions/delete-aluno";
 
 type Escola = {
   id: string;
@@ -106,48 +108,48 @@ const AlunosTable = ({ alunos, escolas }: AlunosTableProps) => {
                 <TableCell>{aluno.address}</TableCell>
                 <TableCell>{formatSex(aluno.sex)}</TableCell>
                 <TableCell>
-                  {(aluno as any)?.album ? (
+                  {(aluno as typeof alunosTable.$inferSelect & { album?: boolean; valor_album?: string })?.album ? (
                     <div>
                       <div>Sim</div>
-                      {(aluno as any)?.valor_album && (
+                      {(aluno as typeof alunosTable.$inferSelect & { album?: boolean; valor_album?: string })?.valor_album && (
                         <div className="text-xs text-muted-foreground">
-                          R$ {parseFloat((aluno as any).valor_album).toFixed(2).replace('.', ',')}
+                          R$ {parseFloat((aluno as typeof alunosTable.$inferSelect & { album?: boolean; valor_album?: string }).valor_album || '0').toFixed(2).replace('.', ',')}
                         </div>
                       )}
                     </div>
                   ) : "Não"}
                 </TableCell>
                 <TableCell>
-                  {(aluno as any)?.colacao ? (
+                  {(aluno as typeof alunosTable.$inferSelect & { colacao?: boolean; valor_colacao?: string })?.colacao ? (
                     <div>
                       <div>Sim</div>
-                      {(aluno as any)?.valor_colacao && (
+                      {(aluno as typeof alunosTable.$inferSelect & { colacao?: boolean; valor_colacao?: string })?.valor_colacao && (
                         <div className="text-xs text-muted-foreground">
-                          R$ {parseFloat((aluno as any).valor_colacao).toFixed(2).replace('.', ',')}
+                          R$ {parseFloat((aluno as typeof alunosTable.$inferSelect & { colacao?: boolean; valor_colacao?: string }).valor_colacao || '0').toFixed(2).replace('.', ',')}
                         </div>
                       )}
                     </div>
                   ) : "Não"}
                 </TableCell>
                 <TableCell>
-                  {(aluno as any)?.baile ? (
+                  {(aluno as typeof alunosTable.$inferSelect & { baile?: boolean; valor_baile?: string })?.baile ? (
                     <div>
                       <div>Sim</div>
-                      {(aluno as any)?.valor_baile && (
+                      {(aluno as typeof alunosTable.$inferSelect & { baile?: boolean; valor_baile?: string })?.valor_baile && (
                         <div className="text-xs text-muted-foreground">
-                          R$ {parseFloat((aluno as any).valor_baile).toFixed(2).replace('.', ',')}
+                          R$ {parseFloat((aluno as typeof alunosTable.$inferSelect & { baile?: boolean; valor_baile?: string }).valor_baile || '0').toFixed(2).replace('.', ',')}
                         </div>
                       )}
                     </div>
                   ) : "Não"}
                 </TableCell>
                 <TableCell>
-                  {(aluno as any)?.convite_extra ? (
+                  {(aluno as typeof alunosTable.$inferSelect & { convite_extra?: boolean; valor_convite_extra?: string })?.convite_extra ? (
                     <div>
                       <div>Sim</div>
-                      {(aluno as any)?.valor_convite_extra && (
+                      {(aluno as typeof alunosTable.$inferSelect & { convite_extra?: boolean; valor_convite_extra?: string })?.valor_convite_extra && (
                         <div className="text-xs text-muted-foreground">
-                          R$ {parseFloat((aluno as any).valor_convite_extra).toFixed(2).replace('.', ',')}
+                          R$ {parseFloat((aluno as typeof alunosTable.$inferSelect & { convite_extra?: boolean; valor_convite_extra?: string }).valor_convite_extra || '0').toFixed(2).replace('.', ',')}
                         </div>
                       )}
                     </div>

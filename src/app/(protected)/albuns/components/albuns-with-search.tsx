@@ -1,8 +1,10 @@
 "use client";
-import { useState } from "react";
-import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
+import { useState } from "react";
+
+import { Input } from "@/components/ui/input";
 import { alunosTable } from "@/db/schema";
+
 import AlbunsTable from "./albuns-table";
 
 type Escola = { id: string; name: string };
@@ -10,10 +12,9 @@ type Escola = { id: string; name: string };
 interface Props {
   alunos: typeof alunosTable.$inferSelect[];
   escolas: Escola[];
-  onRefresh: () => void;
 }
 
-const AlbunsWithSearch = ({ alunos, escolas, onRefresh }: Props) => {
+const AlbunsWithSearch = ({ alunos, escolas }: Props) => {
   const [term, setTerm] = useState("");
 
   const getEscolaName = (id: string) => escolas.find(e=>e.id===id)?.name ?? "-";

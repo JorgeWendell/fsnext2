@@ -1,9 +1,10 @@
 "use server";
+import { eq } from "drizzle-orm";
+import { z } from "zod";
+
 import { db } from "@/db";
 import { financesTable } from "@/db/schema";
 import { actionClient } from "@/lib/next-safe-action";
-import { eq } from "drizzle-orm";
-import { z } from "zod";
 
 export const deleteFinance = actionClient
   .schema(

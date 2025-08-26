@@ -1,18 +1,20 @@
 "use client";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { TrashIcon } from "lucide-react";
+import { useAction } from "next-safe-action/hooks";
+import { useState } from "react";
+import { toast } from "sonner";
+
 import { deleteFinance } from "@/actions/delete-finance";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { alunosTable, financesTable } from "@/db/schema";
-import { format, addMonths } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { TrashIcon } from "lucide-react";
-import { useAction } from "next-safe-action/hooks";
-import { useMemo, useState } from "react";
-import { toast } from "sonner";
-import UpsertFinanceForm from "./upsert-finance-form";
+
 import BoletosPreviewDialog from "./boletos-preview-dialog";
+import UpsertFinanceForm from "./upsert-finance-form";
 
 interface FinanceiroDialogProps {
   aluno: typeof alunosTable.$inferSelect;
@@ -87,9 +89,7 @@ const FinanceiroDialog = ({ aluno, finances, onClose, onRefresh }: FinanceiroDia
     return format(dateObj, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
   };
 
-  const totalValue = finances.reduce((sum, finance) => {
-    return sum + (parseFloat(finance.valueTotal) || 0);
-  }, 0);
+  // Total value calculation removed as it's not being used
 
   // Itens de finanças definidos no cadastro do aluno
   type AlunoFinanceItem = { label: string; enabled: boolean; value: string | null };

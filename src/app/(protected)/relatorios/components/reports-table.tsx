@@ -1,11 +1,13 @@
 "use client";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { FileText, Download } from "lucide-react";
-import { alunosTable, financesTable } from "@/db/schema";
-import ReportDialog from "./report-dialog";
-import { Dialog, DialogTrigger } from "@/components/ui/dialog";
+import { FileText } from "lucide-react";
 import { useState } from "react";
+
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogTrigger } from "@/components/ui/dialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { alunosTable, financesTable } from "@/db/schema";
+
+import ReportDialog from "./report-dialog";
 
 interface Escola { id: string; name: string }
 

@@ -1,3 +1,6 @@
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
+
 import {
   PageActions,
   PageContainer,
@@ -7,16 +10,12 @@ import {
   PageHeaderContent,
   PageTitle,
 } from "@/components/ui/page-container";
+import { db } from "@/db";
+import { alunosTable,escolasTable } from "@/db/schema";
 import { auth } from "@/lib/auth";
 
-import { headers } from "next/headers";
-import { redirect } from "next/navigation";
-
-import { db } from "@/db";
-import { escolasTable, alunosTable } from "@/db/schema";
-
-import AlunosWithSearch from "./components/alunos-with-search";
 import AddAlunoButton from "./components/add-aluno-button";
+import AlunosWithSearch from "./components/alunos-with-search";
 
 const AlunosPage = async () => {
   const session = await auth.api.getSession({

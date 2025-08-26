@@ -1,5 +1,7 @@
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
+
 import {
-  PageActions,
   PageContainer,
   PageContent,
   PageDescription,
@@ -7,13 +9,9 @@ import {
   PageHeaderContent,
   PageTitle,
 } from "@/components/ui/page-container";
-import { auth } from "@/lib/auth";
-
-import { headers } from "next/headers";
-import { redirect } from "next/navigation";
-
 import { db } from "@/db";
-import { escolasTable, alunosTable, financesTable } from "@/db/schema";
+import { alunosTable, escolasTable, financesTable } from "@/db/schema";
+import { auth } from "@/lib/auth";
 
 import FinanceiroWrapper from "./components/financeiro-wrapper";
 
@@ -59,9 +57,6 @@ const FinanceiroPage = async () => {
           <PageTitle>Financeiro</PageTitle>
           <PageDescription>Gerencie os dados financeiros dos alunos</PageDescription>
         </PageHeaderContent>
-        <PageActions>
-          {/* Botão para adicionar financeiro pode ser adicionado aqui no futuro */}
-        </PageActions>
       </PageHeader>
       <PageContent>
         <FinanceiroWrapper 

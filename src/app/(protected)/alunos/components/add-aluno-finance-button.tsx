@@ -1,9 +1,11 @@
 "use client";
 
+import { DollarSign } from "lucide-react";
 import { useState } from "react";
+
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
-import { DollarSign } from "lucide-react";
+
 import UpsertAlunoForm from "./upsert-aluno-form";
 
 interface AddAlunoFinanceButtonProps {

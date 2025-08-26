@@ -1,9 +1,10 @@
 "use server";
+import { eq } from "drizzle-orm";
+import { z } from "zod";
+
 import { db } from "@/db";
 import { financesTable } from "@/db/schema";
 import { actionClient } from "@/lib/next-safe-action";
-import { eq } from "drizzle-orm";
-import { z } from "zod";
 
 export const upsertFinance = actionClient
   .schema(
@@ -12,13 +13,13 @@ export const upsertFinance = actionClient
       method: z.enum(["pix", "debit", "creditvista", "creditparc", "bank_slip"]),
       bank_slip: z.enum(["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]).optional(),
       valueTotal: z.string().min(1, "Valor total é obrigatório"),
-      valueParcela: z.string().optional(),
+      // valueParcela removed as it's not being used
       alunoId: z.string().min(1, "Aluno é obrigatório"),
     })
   )
   .action(async ({ parsedInput }) => {
     try {
-      const { id, method, bank_slip, valueTotal, valueParcela, alunoId } = parsedInput;
+      const { id, method, bank_slip, valueTotal, alunoId } = parsedInput;
 
       if (id) {
         // Atualizar financeiro existente

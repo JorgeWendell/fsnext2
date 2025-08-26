@@ -1,7 +1,10 @@
 "use client";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { Card, CardFooter, CardHeader } from "@/components/ui/card";
+import { TrashIcon } from "lucide-react";
+import { useAction } from "next-safe-action/hooks";
+import { useState } from "react";
+import { toast } from "sonner";
+
+import { deleteRepresentante } from "@/actions/delete-representante";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -13,16 +16,14 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Card, CardFooter, CardHeader } from "@/components/ui/card";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { representantesTable } from "@/db/schema";
 
 import UpsertRepresentanteForm from "./upsert-repre-form";
-import { useState } from "react";
-import { TrashIcon } from "lucide-react";
-import { deleteRepresentante } from "@/actions/delete-representante";
-import { toast } from "sonner";
-import { useAction } from "next-safe-action/hooks";
 interface RepresentanteCardProps {
   representante: typeof representantesTable.$inferSelect;
 }

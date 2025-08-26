@@ -1,8 +1,10 @@
 "use client";
-import { useState } from "react";
-import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
+import { useState } from "react";
+
+import { Input } from "@/components/ui/input";
 import { alunosTable } from "@/db/schema";
+
 import AlunosTable from "./alunos-table";
 
 type Escola = {
@@ -37,14 +39,14 @@ const AlunosWithSearch = ({ alunos, escolas }: AlunosWithSearchProps) => {
       aluno.address.toLowerCase().includes(searchLower) ||
       getEscolaName(aluno.escola).toLowerCase().includes(searchLower) ||
       formatSex(aluno.sex).toLowerCase().includes(searchLower) ||
-      ((aluno as any)?.album ? "sim" : "não").includes(searchLower) ||
-      ((aluno as any)?.colacao ? "sim" : "não").includes(searchLower) ||
-      ((aluno as any)?.baile ? "sim" : "não").includes(searchLower) ||
-      ((aluno as any)?.convite_extra ? "sim" : "não").includes(searchLower) ||
-      ((aluno as any)?.valor_album || "").includes(searchLower) ||
-      ((aluno as any)?.valor_colacao || "").includes(searchLower) ||
-      ((aluno as any)?.valor_baile || "").includes(searchLower) ||
-      ((aluno as any)?.valor_convite_extra || "").includes(searchLower) ||
+      ((aluno as typeof alunosTable.$inferSelect & { album?: boolean })?.album ? "sim" : "não").includes(searchLower) ||
+      ((aluno as typeof alunosTable.$inferSelect & { colacao?: boolean })?.colacao ? "sim" : "não").includes(searchLower) ||
+      ((aluno as typeof alunosTable.$inferSelect & { baile?: boolean })?.baile ? "sim" : "não").includes(searchLower) ||
+      ((aluno as typeof alunosTable.$inferSelect & { convite_extra?: boolean })?.convite_extra ? "sim" : "não").includes(searchLower) ||
+      ((aluno as typeof alunosTable.$inferSelect & { valor_album?: string })?.valor_album || "").includes(searchLower) ||
+      ((aluno as typeof alunosTable.$inferSelect & { valor_colacao?: string })?.valor_colacao || "").includes(searchLower) ||
+      ((aluno as typeof alunosTable.$inferSelect & { valor_baile?: string })?.valor_baile || "").includes(searchLower) ||
+      ((aluno as typeof alunosTable.$inferSelect & { valor_convite_extra?: string })?.valor_convite_extra || "").includes(searchLower) ||
       "álbum".includes(searchLower) ||
       "colação".includes(searchLower) ||
       "baile".includes(searchLower) ||

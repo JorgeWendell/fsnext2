@@ -1,4 +1,14 @@
 "use client";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { addMonths, format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { useAction } from "next-safe-action/hooks";
+import { useEffect, useMemo,useState } from "react";
+import { useForm } from "react-hook-form";
+import { toast } from "sonner";
+import { z } from "zod";
+
+import { upsertFinance } from "@/actions/upsert-finance";
 import { Button } from "@/components/ui/button";
 import {
   DialogContent,
@@ -24,15 +34,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { financesTable } from "@/db/schema";
-import { useAction } from "next-safe-action/hooks";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { upsertFinance } from "@/actions/upsert-finance";
-import { toast } from "sonner";
-import { useState, useEffect, useMemo } from "react";
-import { addMonths, format } from "date-fns";
-import { ptBR } from "date-fns/locale";
 
 interface UpsertFinanceFormProps {
   finance?: typeof financesTable.$inferSelect;
@@ -69,8 +70,8 @@ const UpsertFinanceForm = ({ finance, alunoId, onSuccess, defaultValueTotal }: U
 
   const upsertFinanceAction = useAction(upsertFinance, {
     onSuccess: (data) => {
-      if ((data as any).error) {
-        toast.error((data as any).error);
+      if ((data as { error?: string }).error) {
+        toast.error((data as { error?: string }).error);
       } else {
         toast.success(finance ? "Dados financeiros atualizados com sucesso!" : "Dados financeiros adicionados com sucesso!");
         form.reset();
@@ -89,7 +90,7 @@ const UpsertFinanceForm = ({ finance, alunoId, onSuccess, defaultValueTotal }: U
 
   const handleMethodChange = (method: string) => {
     setSelectedMethod(method);
-    form.setValue("method", method as any);
+    form.setValue("method", method as "pix" | "debit" | "creditvista" | "creditparc" | "bank_slip");
     if (method !== "bank_slip" && method !== "creditparc") {
       form.setValue("bank_slip", undefined);
     }
@@ -118,8 +119,10 @@ const UpsertFinanceForm = ({ finance, alunoId, onSuccess, defaultValueTotal }: U
     }
   };
 
-  const numParcelas = useMemo(() => parseInt(form.getValues("bank_slip") || "0", 10) || 0, [form.watch("bank_slip")]);
-  const valorTotalNumber = useMemo(() => parseFloat(form.getValues("valueTotal") || "0") || 0, [form.watch("valueTotal")]);
+  const bankSlipValue = form.watch("bank_slip");
+  const valueTotalValue = form.watch("valueTotal");
+  const numParcelas = useMemo(() => parseInt(bankSlipValue || "0", 10) || 0, [bankSlipValue]);
+  const valorTotalNumber = useMemo(() => parseFloat(valueTotalValue || "0") || 0, [valueTotalValue]);
   const valorParcelaNumber = useMemo(() => numParcelas > 0 ? valorTotalNumber / numParcelas : 0, [numParcelas, valorTotalNumber]);
 
   const parcelasPreview = useMemo(() => {
@@ -171,7 +174,7 @@ const UpsertFinanceForm = ({ finance, alunoId, onSuccess, defaultValueTotal }: U
               <FormField
                 control={form.control}
                 name="method"
-                render={({ field }) => (
+                render={() => (
                   <FormItem>
                     <FormLabel>Método de Pagamento</FormLabel>
                     <Select
@@ -200,12 +203,12 @@ const UpsertFinanceForm = ({ finance, alunoId, onSuccess, defaultValueTotal }: U
                 <FormField
                   control={form.control}
                   name="bank_slip"
-                  render={({ field }) => (
+                  render={() => (
                     <FormItem>
                       <FormLabel>Parcela</FormLabel>
                       <Select
-                        value={field.value}
-                        onValueChange={(v)=>form.setValue("bank_slip", v as any)}
+                        value={form.getValues("bank_slip")}
+                                                 onValueChange={(v)=>form.setValue("bank_slip", v as "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "10")}
                       >
                         <FormControl>
                           <SelectTrigger>

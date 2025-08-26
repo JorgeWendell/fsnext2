@@ -1,10 +1,12 @@
 "use client";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { alunosTable } from "@/db/schema";
+import { useState } from "react";
+
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { alunosTable } from "@/db/schema";
+
 import AlbumEditDialog from "./album-edit-dialog";
-import { useState } from "react";
 
 interface Escola { id: string; name: string }
 
@@ -43,7 +45,7 @@ const AlbunsTable = ({ alunos, escolas }: Props) => {
               <TableCell className="font-medium">{aluno.name}</TableCell>
               <TableCell>{getEscolaName(aluno.escola)}</TableCell>
               <TableCell>{aluno.class}</TableCell>
-              <TableCell className="text-right">{currency((aluno as any).valor_album)}</TableCell>
+              <TableCell className="text-right">{currency((aluno as typeof alunosTable.$inferSelect & { valor_album?: string }).valor_album)}</TableCell>
               <TableCell className="text-right">
                 <div className="flex justify-end gap-2">
                   <Dialog open={openAlunoId === aluno.id} onOpenChange={(o)=>{ if (!o) setOpenAlunoId(null); }}>
@@ -51,7 +53,7 @@ const AlbunsTable = ({ alunos, escolas }: Props) => {
                       <Button size="sm" variant="outline" onClick={()=>setOpenAlunoId(aluno.id)}>Editar</Button>
                     </DialogTrigger>
                     {openAlunoId === aluno.id && (
-                      <AlbumEditDialog aluno={aluno as any} onClose={()=>setOpenAlunoId(null)} />
+                      <AlbumEditDialog aluno={aluno as typeof alunosTable.$inferSelect & { album?: boolean; valor_album?: string }} onClose={()=>setOpenAlunoId(null)} />
                     )}
                   </Dialog>
                   {/* Botão PDF removido */}

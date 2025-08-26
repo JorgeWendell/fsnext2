@@ -1,15 +1,16 @@
 "use client";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useAction } from "next-safe-action/hooks";
+import { useForm } from "react-hook-form";
+import { toast } from "sonner";
+import { z } from "zod";
+
+import { updateAlbum } from "@/actions/update-album";
+import { Button } from "@/components/ui/button";
 import { DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { alunosTable } from "@/db/schema";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useAction } from "next-safe-action/hooks";
-import { updateAlbum } from "@/actions/update-album";
-import { toast } from "sonner";
 
 const schema = z.object({
   id: z.string(),
@@ -35,8 +36,8 @@ const AlbumEditDialog = ({ aluno, onClose }: Props) => {
     resolver: zodResolver(schema),
     defaultValues: {
       id: aluno.id,
-      album: (aluno as any).album ?? true,
-      valor_album: (aluno as any).valor_album ?? "",
+      album: (aluno as typeof alunosTable.$inferSelect & { album?: boolean; valor_album?: string }).album ?? true,
+      valor_album: (aluno as typeof alunosTable.$inferSelect & { album?: boolean; valor_album?: string }).valor_album ?? "",
     }
   });
 

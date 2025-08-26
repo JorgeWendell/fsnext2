@@ -1,10 +1,11 @@
 "use server";
+import { eq } from "drizzle-orm";
+import { revalidatePath } from "next/cache";
+import { z } from "zod";
+
 import { db } from "@/db";
 import { alunosTable } from "@/db/schema";
 import { actionClient } from "@/lib/next-safe-action";
-import { eq } from "drizzle-orm";
-import { z } from "zod";
-import { revalidatePath } from "next/cache";
 
 export const updateAlbum = actionClient
   .schema(

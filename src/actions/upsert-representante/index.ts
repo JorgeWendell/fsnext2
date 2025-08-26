@@ -1,12 +1,13 @@
 "use server";
-import { db } from "@/db";
+import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 
+import { db } from "@/db";
 import { representantesTable } from "@/db/schema";
 import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
 import { actionClient } from "@/lib/next-safe-action";
+
 import { upsertRepresentanteSchema } from "./schema";
-import { revalidatePath } from "next/cache";
 
 export const upsertRepresentante = actionClient
   .schema(upsertRepresentanteSchema)

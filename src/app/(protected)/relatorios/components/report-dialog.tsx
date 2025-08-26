@@ -1,12 +1,13 @@
 "use client";
-import { DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { alunosTable, financesTable } from "@/db/schema";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
 import { addMonths, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+
+import { Button } from "@/components/ui/button";
+import { DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { alunosTable, financesTable } from "@/db/schema";
 
 interface Escola { id: string; name: string }
 
@@ -26,7 +27,7 @@ const ReportDialog = ({ aluno, finances, escolas }: Props) => {
   const valorConviteExtra = parseFloat(aluno.valor_convite_extra || '0');
   
   const totalItensAluno = valorAlbum + valorColacao + valorBaile + valorConviteExtra;
-  const totalPagamentos = finances.reduce((s, f)=> s + (parseFloat(f.valueTotal)||0), 0);
+  // totalPagamentos removed as it's not being used
   const escolaName = escolas.find(e=>e.id===aluno.escola)?.name ?? "-";
 
   const handlePdf = () => {
@@ -93,8 +94,7 @@ const ReportDialog = ({ aluno, finances, escolas }: Props) => {
       const boletos = finances.filter(f => f.method === "bank_slip");
       boletos.forEach(boleto => {
         const boletoDate = new Date(boleto.createdAt);
-        const boletoMonth = boletoDate.getMonth();
-        const boletoYear = boletoDate.getFullYear();
+        // boletoMonth and boletoYear removed as they're not being used
         
         // Verificar se existe status das parcelas salvo
         const parcelasPagas = boleto.parcelasPagas ? JSON.parse(boleto.parcelasPagas) : {};
@@ -141,7 +141,7 @@ const ReportDialog = ({ aluno, finances, escolas }: Props) => {
     });
 
     // Adicionar informações adicionais
-    const tableEndY = (doc as any).lastAutoTable.finalY + 10;
+    const tableEndY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10;
     doc.text(`Escola: ${escolaName}`, 14, tableEndY);
     doc.text(`Classe: ${aluno.class}`, 14, tableEndY + 8);
     doc.text(`Total Geral: ${currency(totalGeral)}`, 14, tableEndY + 16);

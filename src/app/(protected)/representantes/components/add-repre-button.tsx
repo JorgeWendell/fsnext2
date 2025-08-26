@@ -1,11 +1,12 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
-
 import { Plus } from "lucide-react";
-import UpsertRepresentanteForm from "./upsert-repre-form";
 import { useState } from "react";
+
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogTrigger } from "@/components/ui/dialog";
+
+import UpsertRepresentanteForm from "./upsert-repre-form";
 
 const AddRepresentanteButton = () => {
   const [isOpen, setIsOpen] = useState(false);

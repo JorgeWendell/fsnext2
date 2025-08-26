@@ -1,9 +1,11 @@
-import { PageActions, PageContainer, PageContent, PageDescription, PageHeader, PageHeaderContent, PageTitle } from "@/components/ui/page-container";
-import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+
+import { PageContainer, PageContent, PageDescription, PageHeader, PageHeaderContent, PageTitle } from "@/components/ui/page-container";
 import { db } from "@/db";
 import { alunosTable, escolasTable } from "@/db/schema";
+import { auth } from "@/lib/auth";
+
 import AlbunsWrapper from "./components/albuns-wrapper";
 
 const AlbunsPage = async () => {
@@ -16,8 +18,8 @@ const AlbunsPage = async () => {
   try {
     escolas = await db.select().from(escolasTable);
     const allAlunos = await db.query.alunosTable.findMany();
-    alunos = allAlunos.filter((a: any) => a.album === true);
-  } catch (e) {
+         alunos = allAlunos.filter((a: typeof alunosTable.$inferSelect & { album?: boolean }) => a.album === true);
+  } catch {
     alunos = [];
     escolas = [];
   }
@@ -29,7 +31,6 @@ const AlbunsPage = async () => {
           <PageTitle>Álbuns</PageTitle>
           <PageDescription>Gerencie os pedidos de álbuns dos alunos</PageDescription>
         </PageHeaderContent>
-        <PageActions />
       </PageHeader>
       <PageContent>
         <AlbunsWrapper alunos={alunos} escolas={escolas} />
