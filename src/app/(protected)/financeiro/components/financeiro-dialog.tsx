@@ -111,7 +111,7 @@ const FinanceiroDialog = ({ aluno, finances, onClose, onRefresh }: FinanceiroDia
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="w-[95vw] max-w-full h-[70vh] overflow-y-visible">
+      <DialogContent className="w-[95vw] max-w-full h-[70vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex justify-between items-start">
             <div>
