@@ -93,8 +93,15 @@ const ReportDialog = ({ aluno, finances, escolas }: Props) => {
       // Processar boletos parcelados - SOMENTE se o checkbox estiver marcado como pago
       const boletos = finances.filter(f => f.method === "bank_slip");
       boletos.forEach(boleto => {
-        const boletoDate = new Date(boleto.createdAt);
-        // boletoMonth and boletoYear removed as they're not being used
+        // Usar a data do primeiro vencimento se disponível, senão usar a data de criação
+        let boletoDate: Date;
+        if (boleto.firstDueDate) {
+          // Corrigir problema de timezone - criar data no timezone local
+          const [year, month, day] = boleto.firstDueDate.split('-').map(Number);
+          boletoDate = new Date(year, month - 1, day); // month - 1 porque Date usa 0-based months
+        } else {
+          boletoDate = new Date(boleto.createdAt);
+        }
         
         // Verificar se existe status das parcelas salvo
         const parcelasPagas = boleto.parcelasPagas ? JSON.parse(boleto.parcelasPagas) : {};

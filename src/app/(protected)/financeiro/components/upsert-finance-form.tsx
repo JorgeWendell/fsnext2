@@ -47,6 +47,7 @@ const upsertFinanceSchema = z.object({
   method: z.enum(["pix", "debit", "creditvista", "creditparc", "bank_slip"]),
   bank_slip: z.enum(["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]).optional(),
   valueTotal: z.string().min(1, "Valor é obrigatório"),
+  firstDueDate: z.string().optional(),
   alunoId: z.string().min(1, "Aluno é obrigatório"),
 });
 
@@ -64,6 +65,7 @@ const UpsertFinanceForm = ({ finance, alunoId, onSuccess, defaultValueTotal }: U
       method: finance?.method || "pix",
       bank_slip: finance?.bank_slip || undefined,
       valueTotal: finance?.valueTotal || defaultValueTotal || "",
+      firstDueDate: finance?.firstDueDate || "",
       alunoId: alunoId,
     },
   });
@@ -127,7 +129,11 @@ const UpsertFinanceForm = ({ finance, alunoId, onSuccess, defaultValueTotal }: U
 
   const parcelasPreview = useMemo(() => {
     if (selectedMethod !== "bank_slip" || !firstDueDate || numParcelas <= 0 || valorParcelaNumber <= 0) return [] as { date: string; value: string }[];
-    const start = new Date(firstDueDate);
+    
+    // Corrigir problema de timezone - criar data no timezone local
+    const [year, month, day] = firstDueDate.split('-').map(Number);
+    const start = new Date(year, month - 1, day); // month - 1 porque Date usa 0-based months
+    
     const list: { date: string; value: string }[] = [];
     for (let i = 0; i < numParcelas; i++) {
       const due = addMonths(start, i);
@@ -142,6 +148,9 @@ const UpsertFinanceForm = ({ finance, alunoId, onSuccess, defaultValueTotal }: U
   useEffect(() => {
     if (finance) {
       setSelectedMethod(finance.method);
+      if (finance.firstDueDate) {
+        setFirstDueDate(finance.firstDueDate);
+      }
     }
     if (!finance && defaultValueTotal && !form.getValues("valueTotal")) {
       form.setValue("valueTotal", defaultValueTotal);
@@ -230,12 +239,26 @@ const UpsertFinanceForm = ({ finance, alunoId, onSuccess, defaultValueTotal }: U
               )}
 
               {selectedMethod === "bank_slip" && (
-                <FormItem>
-                  <FormLabel>Data do 1º Vencimento</FormLabel>
-                  <FormControl>
-                    <Input type="date" value={firstDueDate} onChange={(e)=>setFirstDueDate(e.target.value)} />
-                  </FormControl>
-                </FormItem>
+                <FormField
+                  control={form.control}
+                  name="firstDueDate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Data do 1º Vencimento</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="date" 
+                          value={field.value || ""} 
+                          onChange={(e) => {
+                            field.onChange(e.target.value);
+                            setFirstDueDate(e.target.value);
+                          }} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               )}
 
               {(selectedMethod === "bank_slip" || selectedMethod === "creditparc") && form.getValues("bank_slip") && form.getValues("valueTotal") && (

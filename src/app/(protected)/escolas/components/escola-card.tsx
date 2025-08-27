@@ -67,7 +67,7 @@ const EscolaCard = ({ escola, representantes }: EscolaCardProps) => {
           <div>
             <h3 className="text-sm font-medium">{escola.name}</h3>
             <p className="text-sm text-muted-foreground">
-              Telefone: {escola.phone}
+              Telefone: {escola.phone || "Não informado"}
             </p>
           </div>
         </div>

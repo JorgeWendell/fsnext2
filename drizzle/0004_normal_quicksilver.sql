@@ -1,0 +1,1 @@
+ALTER TABLE "finances" ADD COLUMN "first_due_date" text;

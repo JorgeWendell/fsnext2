@@ -13,13 +13,13 @@ export const upsertFinance = actionClient
       method: z.enum(["pix", "debit", "creditvista", "creditparc", "bank_slip"]),
       bank_slip: z.enum(["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]).optional(),
       valueTotal: z.string().min(1, "Valor total é obrigatório"),
-      // valueParcela removed as it's not being used
+      firstDueDate: z.string().optional(), // Data do primeiro vencimento para boletos
       alunoId: z.string().min(1, "Aluno é obrigatório"),
     })
   )
   .action(async ({ parsedInput }) => {
     try {
-      const { id, method, bank_slip, valueTotal, alunoId } = parsedInput;
+      const { id, method, bank_slip, valueTotal, firstDueDate, alunoId } = parsedInput;
 
       if (id) {
         // Atualizar financeiro existente
@@ -29,6 +29,7 @@ export const upsertFinance = actionClient
             method,
             bank_slip,
             valueTotal,
+            firstDueDate,
             alunoId,
             updateAt: new Date(),
           })
@@ -39,6 +40,7 @@ export const upsertFinance = actionClient
           method,
           bank_slip,
           valueTotal,
+          firstDueDate,
           alunoId,
         });
       }

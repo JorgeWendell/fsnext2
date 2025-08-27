@@ -37,19 +37,25 @@ const BoletosPreviewDialog = ({ finances, isOpen, onClose, onRefresh }: BoletosP
     const bankSlip = finances.filter((f) => f.method === "bank_slip");
     if (bankSlip.length === 0) return [] as { label: string; date: string; value: string }[];
 
-    const earliest = bankSlip.reduce((min, f) => (new Date(f.createdAt) < new Date(min.createdAt) ? f : min), bankSlip[0]);
-    const maxParcela = bankSlip.reduce((m, f) => {
-      const n = parseInt((f.bank_slip as string) || "0", 10);
-      return isNaN(n) ? m : Math.max(m, n);
-    }, 0);
+    const boleto = bankSlip[0]; // Usar o primeiro boleto
+    const maxParcela = parseInt((boleto.bank_slip as string) || "0", 10);
 
     if (maxParcela <= 0) return [] as { label: string; date: string; value: string }[];
 
-    // Usa o primeiro valorTotal como base para dividir pelas parcelas
-    const baseTotal = parseFloat(bankSlip[0].valueTotal) || 0;
+    // Usa o valorTotal como base para dividir pelas parcelas
+    const baseTotal = parseFloat(boleto.valueTotal) || 0;
     const parcelaValor = maxParcela > 0 ? baseTotal / maxParcela : 0;
 
-    const start = new Date(earliest.createdAt);
+    // Usar a data do primeiro vencimento salva no banco, ou fallback para a data de criação
+    let start: Date;
+    if (boleto.firstDueDate) {
+      // Corrigir problema de timezone - criar data no timezone local
+      const [year, month, day] = boleto.firstDueDate.split('-').map(Number);
+      start = new Date(year, month - 1, day); // month - 1 porque Date usa 0-based months
+    } else {
+      start = new Date(boleto.createdAt);
+    }
+
     const list: { label: string; date: string; value: string }[] = [];
     for (let i = 0; i < maxParcela; i++) {
       const due = addMonths(start, i);

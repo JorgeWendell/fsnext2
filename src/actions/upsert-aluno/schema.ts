@@ -4,8 +4,8 @@ export const upsertAlunoSchema = z.object({
   id: z.string().optional(),
   name: z.string().trim().min(1, { message: "Nome é obrigatório" }),
   class: z.string().trim().min(1, { message: "Classe é obrigatória" }),
-  address: z.string().trim().min(1, { message: "Endereço é obrigatório" }),
-  phone: z.string().trim().min(1, { message: "Telefone é obrigatório" }),
+  address: z.string().trim().optional(),
+  phone: z.string().trim().optional(),
   sex: z.enum(["male", "female"], { message: "Sexo é obrigatório" }),
   escola: z
     .string()

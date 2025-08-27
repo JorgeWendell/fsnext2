@@ -35,8 +35,8 @@ const AlunosWithSearch = ({ alunos, escolas }: AlunosWithSearchProps) => {
     return (
       aluno.name.toLowerCase().includes(searchLower) ||
       aluno.class.toLowerCase().includes(searchLower) ||
-      aluno.phone.toLowerCase().includes(searchLower) ||
-      aluno.address.toLowerCase().includes(searchLower) ||
+      (aluno.phone || "").toLowerCase().includes(searchLower) ||
+      (aluno.address || "").toLowerCase().includes(searchLower) ||
       getEscolaName(aluno.escola).toLowerCase().includes(searchLower) ||
       formatSex(aluno.sex).toLowerCase().includes(searchLower) ||
       ((aluno as typeof alunosTable.$inferSelect & { album?: boolean })?.album ? "sim" : "não").includes(searchLower) ||

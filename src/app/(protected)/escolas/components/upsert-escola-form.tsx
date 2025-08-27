@@ -36,8 +36,8 @@ import { escolasTable } from "@/db/schema";
 
 const formSchema = z.object({
   name: z.string().trim().min(1, { message: "Nome é obrigatório" }),
-  address: z.string().trim().min(1, { message: "Endereço é obrigatório" }),
-  phone: z.string().trim().min(1, { message: "Telefone é obrigatório" }),
+  address: z.string().trim().optional(),
+  phone: z.string().trim().optional(),
   representante: z
     .string()
     .trim()

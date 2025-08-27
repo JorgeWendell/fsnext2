@@ -104,8 +104,8 @@ const AlunosTable = ({ alunos, escolas }: AlunosTableProps) => {
                 <TableCell className="font-medium">{aluno.name}</TableCell>
                 <TableCell>{aluno.class}</TableCell>
                 <TableCell>{getEscolaName(aluno.escola)}</TableCell>
-                <TableCell>{aluno.phone}</TableCell>
-                <TableCell>{aluno.address}</TableCell>
+                <TableCell>{aluno.phone || "-"}</TableCell>
+                <TableCell>{aluno.address || "-"}</TableCell>
                 <TableCell>{formatSex(aluno.sex)}</TableCell>
                 <TableCell>
                   {(aluno as typeof alunosTable.$inferSelect & { album?: boolean; valor_album?: string })?.album ? (

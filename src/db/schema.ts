@@ -60,8 +60,8 @@ export const representantesTable = pgTable("representantes", {
 export const escolasTable = pgTable("escolas", {
     id: uuid("id").primaryKey().defaultRandom(),
     name: text("name").notNull(),
-    address: text("address").notNull(),
-    phone: text("phone").notNull(),
+    address: text("address"),
+    phone: text("phone"),
     representanteId: uuid("representanteId").notNull().references(() => representantesTable.id, {onDelete: "set null"}),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updateAt: timestamp("update_at").notNull().defaultNow().$onUpdate(() => new Date()),
@@ -89,8 +89,8 @@ export const alunosTable = pgTable("alunos", {
     name: text("name").notNull(),
     class: text("class").notNull(),
     escola: uuid("escola").notNull().references(() => escolasTable.id , {onDelete: "set null"}),
-    address: text("address").notNull(),
-    phone: text("phone").notNull(),    
+    address: text("address"),
+    phone: text("phone"),    
     sex: alunosSexEnum("sex").notNull(),    
     album: boolean("album").notNull().default(false),
     valor_album: text("valor_album"),
@@ -121,6 +121,7 @@ export const financesTable = pgTable("finances", {
     bank_slip: financeBankSlip("bank_slip"),
     valueTotal: text("value").notNull(),
     parcelasPagas: text("parcelas_pagas"), // JSON string para armazenar status das parcelas
+    firstDueDate: text("first_due_date"), // Data do primeiro vencimento para boletos
     alunoId: uuid("alunoId").notNull().references(() => alunosTable.id , {onDelete: "set null"}),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updateAt: timestamp("update_at").notNull().defaultNow().$onUpdate(() => new Date()),
