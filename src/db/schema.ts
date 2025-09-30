@@ -76,7 +76,7 @@ export const escolasTable = pgTable("escolas", {
   phone: text("phone"),
   representanteId: uuid("representanteId")
     .notNull()
-    .references(() => representantesTable.id, { onDelete: "set null" }),
+    .references(() => representantesTable.id, { onDelete: "cascade" }),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updateAt: timestamp("update_at")
     .notNull()
@@ -112,7 +112,7 @@ export const alunosTable = pgTable("alunos", {
   ano_formacao: text("ano_formacao").notNull(),
   escola: uuid("escola")
     .notNull()
-    .references(() => escolasTable.id, { onDelete: "set null" }),
+    .references(() => escolasTable.id, { onDelete: "cascade" }),
   address: text("address"),
   phone: text("phone"),
   sex: alunosSexEnum("sex").notNull(),
@@ -168,7 +168,7 @@ export const financesTable = pgTable("finances", {
   firstDueDate: text("first_due_date"), // Data do primeiro vencimento para boletos
   alunoId: uuid("alunoId")
     .notNull()
-    .references(() => alunosTable.id, { onDelete: "set null" }),
+    .references(() => alunosTable.id, { onDelete: "cascade" }),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updateAt: timestamp("update_at")
     .notNull()
