@@ -1,0 +1,1 @@
+ALTER TABLE "escolas" ADD COLUMN "codigo" integer NOT NULL;

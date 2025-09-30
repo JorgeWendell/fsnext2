@@ -36,6 +36,11 @@ import { escolasTable } from "@/db/schema";
 
 const formSchema = z.object({
   name: z.string().trim().min(1, { message: "Nome é obrigatório" }),
+  codigo: z
+    .string()
+    .trim()
+    .length(3, { message: "Código deve ter exatamente 3 dígitos" })
+    .regex(/^\d{3}$/, { message: "Código deve conter apenas números" }),
   address: z.string().trim().optional(),
   phone: z.string().trim().optional(),
   representante: z
@@ -49,9 +54,9 @@ type FormSchema = z.infer<typeof formSchema>;
 // Se quiser manter como string
 
 type Representante = {
-  id: string
-  name: string
-}
+  id: string;
+  name: string;
+};
 
 interface UpsertEscolaFormProps {
   escola?: typeof escolasTable.$inferSelect;
@@ -70,6 +75,7 @@ const UpsertEscolaForm = ({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: escola?.name ?? "",
+      codigo: escola?.codigo ?? "",
       address: escola?.address ?? "",
       phone: escola?.phone ?? "",
       representante: escola?.representanteId ?? "",
@@ -104,6 +110,19 @@ const UpsertEscolaForm = ({
       </DialogHeader>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+          <FormField
+            control={form.control}
+            name="codigo"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Código</FormLabel>
+                <FormControl>
+                  <Input placeholder="Código" maxLength={3} {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
           <FormField
             control={form.control}
             name="name"
@@ -149,7 +168,10 @@ const UpsertEscolaForm = ({
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Representante</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione um representante" />
                   </SelectTrigger>
@@ -158,7 +180,10 @@ const UpsertEscolaForm = ({
                       <SelectLabel>Representantes</SelectLabel>
                       {representantes && representantes.length > 0 ? (
                         representantes.map((representante) => (
-                          <SelectItem key={representante.id} value={representante.id}>
+                          <SelectItem
+                            key={representante.id}
+                            value={representante.id}
+                          >
                             {representante.name}
                           </SelectItem>
                         ))

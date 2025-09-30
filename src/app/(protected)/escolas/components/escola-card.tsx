@@ -28,7 +28,7 @@ import UpsertEscolaForm from "./upsert-escola-form";
 type Representante = {
   id: string;
   name: string;
-}
+};
 
 interface EscolaCardProps {
   escola: typeof escolasTable.$inferSelect;
@@ -36,8 +36,9 @@ interface EscolaCardProps {
 }
 
 const EscolaCard = ({ escola, representantes }: EscolaCardProps) => {
-  const [isUpsertEscolaDialogOpen, setIsUpsertEscolaDialogOpen] = useState(false);
-  
+  const [isUpsertEscolaDialogOpen, setIsUpsertEscolaDialogOpen] =
+    useState(false);
+
   const deleteEscolaAction = useAction(deleteEscola, {
     onSuccess: () => {
       toast.success("Escola excluido com sucesso");
@@ -65,6 +66,9 @@ const EscolaCard = ({ escola, representantes }: EscolaCardProps) => {
             <AvatarFallback>{escolaInitials}</AvatarFallback>
           </Avatar>
           <div>
+            <p className="text-xs text-muted-foreground">
+              Código: {escola.codigo}
+            </p>
             <h3 className="text-sm font-medium">{escola.name}</h3>
             <p className="text-sm text-muted-foreground">
               Telefone: {escola.phone || "Não informado"}

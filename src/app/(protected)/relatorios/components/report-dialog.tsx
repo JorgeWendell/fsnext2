@@ -24,6 +24,7 @@ import { alunosTable, financesTable } from "@/db/schema";
 interface Escola {
   id: string;
   name: string;
+  codigo: string;
 }
 
 interface Props {

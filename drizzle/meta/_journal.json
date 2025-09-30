@@ -43,6 +43,34 @@
       "when": 1756322351918,
       "tag": "0005_lively_makkari",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1759252699402,
+      "tag": "0006_gifted_landau",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1759253135546,
+      "tag": "0007_wild_marten_broadcloak",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1759253389963,
+      "tag": "0008_reflective_joseph",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1759254395797,
+      "tag": "0009_stormy_butterfly",
+      "breakpoints": true
     }
   ]
 }

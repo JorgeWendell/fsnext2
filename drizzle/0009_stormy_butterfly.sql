@@ -1,0 +1,1 @@
+ALTER TABLE "alunos" ADD COLUMN "ano_formacao" text NOT NULL;

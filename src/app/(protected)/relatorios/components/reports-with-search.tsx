@@ -19,7 +19,7 @@ import { alunosTable, financesTable } from "@/db/schema";
 
 import ReportsTable from "./reports-table";
 
-type Escola = { id: string; name: string };
+type Escola = { id: string; name: string; codigo: string };
 
 interface Props {
   alunos: (typeof alunosTable.$inferSelect)[];
@@ -47,14 +47,41 @@ const ReportsWithSearch = ({ alunos, escolas, finances }: Props) => {
     return classes.sort();
   }, [alunos]);
 
+  const getEscolaCodigo = useCallback(
+    (id: string) => escolas.find((e) => e.id === id)?.codigo ?? "",
+    [escolas]
+  );
+
   const filteredAlunos = useMemo(() => {
-    const t = term.toLowerCase();
+    const t = term.toLowerCase().trim();
+
+    if (t.includes("/")) {
+      const parts = t.split("/").map((s) => s.trim());
+      const [codigoAluno, codigoEscola, anoFormacao] = parts;
+
+      return alunos.filter((a) => {
+        const alunoCodigoMatch = codigoAluno
+          ? a.codigo.toLowerCase().includes(codigoAluno)
+          : true;
+        const escolaCodigoMatch = codigoEscola
+          ? getEscolaCodigo(a.escola).toLowerCase().includes(codigoEscola)
+          : true;
+        const anoFormacaoMatch = anoFormacao
+          ? a.ano_formacao.toLowerCase().includes(anoFormacao)
+          : true;
+        return alunoCodigoMatch && escolaCodigoMatch && anoFormacaoMatch;
+      });
+    }
+
     return alunos.filter(
       (a) =>
         a.name.toLowerCase().includes(t) ||
-        getEscolaName(a.escola).toLowerCase().includes(t)
+        a.codigo.toLowerCase().includes(t) ||
+        a.ano_formacao.toLowerCase().includes(t) ||
+        getEscolaName(a.escola).toLowerCase().includes(t) ||
+        getEscolaCodigo(a.escola).toLowerCase().includes(t)
     );
-  }, [alunos, term, getEscolaName]);
+  }, [alunos, term, getEscolaName, getEscolaCodigo]);
 
   const handleExportSchoolPdf = () => {
     if (!schoolId) return;
@@ -436,7 +463,7 @@ const ReportsWithSearch = ({ alunos, escolas, finances }: Props) => {
         <div className="flex items-center space-x-2">
           <Search className="h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Buscar por aluno..."
+            placeholder="Buscar por aluno ou código (ex: 001/100/2024)"
             className="max-w-sm"
             value={term}
             onChange={(e) => setTerm(e.target.value)}
@@ -451,7 +478,7 @@ const ReportsWithSearch = ({ alunos, escolas, finances }: Props) => {
               <SelectContent>
                 {escolas.map((e) => (
                   <SelectItem key={e.id} value={e.id}>
-                    {e.name}
+                    {e.codigo} - {e.name}
                   </SelectItem>
                 ))}
               </SelectContent>

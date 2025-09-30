@@ -37,55 +37,80 @@ import {
 } from "@/components/ui/select";
 import { alunosTable } from "@/db/schema";
 
-const formSchema = z.object({
-  name: z.string().trim().min(1, { message: "Nome é obrigatório" }),
-  class: z.string().trim().min(1, { message: "Classe é obrigatória" }),
-  address: z.string().trim().optional(),
-  phone: z.string().trim().optional(),
-  sex: z.enum(["male", "female"], { message: "Sexo é obrigatório" }),
-  escola: z
-    .string()
-    .trim()
-    .min(1, { message: "Escola é obrigatória" }),
-  album: z.boolean().optional(),
-  valor_album: z.string().optional(),
-  colacao: z.boolean().optional(),
-  valor_colacao: z.string().optional(),
-  baile: z.boolean().optional(),
-  valor_baile: z.string().optional(),
-  convite_extra: z.boolean().optional(),
-  valor_convite_extra: z.string().optional(),
-}).refine((data) => {
-  if (data.album) {
-    return !!data.valor_album && data.valor_album.trim() !== "";
-  }
-  return true;
-}, { path: ["valor_album"], message: "Informe o valor do álbum" })
-.refine((data) => {
-  if (data.colacao) {
-    return !!data.valor_colacao && data.valor_colacao.trim() !== "";
-  }
-  return true;
-}, { path: ["valor_colacao"], message: "Informe o valor da colação" })
-.refine((data) => {
-  if (data.baile) {
-    return !!data.valor_baile && data.valor_baile.trim() !== "";
-  }
-  return true;
-}, { path: ["valor_baile"], message: "Informe o valor do baile" })
-.refine((data) => {
-  if (data.convite_extra) {
-    return !!data.valor_convite_extra && data.valor_convite_extra.trim() !== "";
-  }
-  return true;
-}, { path: ["valor_convite_extra"], message: "Informe o valor do convite extra" });
+const formSchema = z
+  .object({
+    name: z.string().trim().min(1, { message: "Nome é obrigatório" }),
+    codigo: z
+      .string()
+      .trim()
+      .length(3, { message: "Código deve ter exatamente 3 dígitos" })
+      .regex(/^\d{3}$/, { message: "Código deve conter apenas números" }),
+    class: z.string().trim().min(1, { message: "Classe é obrigatória" }),
+    ano_formacao: z
+      .string()
+      .trim()
+      .min(4, { message: "Ano de formação é obrigatório" }),
+    address: z.string().trim().optional(),
+    phone: z.string().trim().optional(),
+    sex: z.enum(["male", "female"], { message: "Sexo é obrigatório" }),
+    escola: z.string().trim().min(1, { message: "Escola é obrigatória" }),
+    album: z.boolean().optional(),
+    valor_album: z.string().optional(),
+    colacao: z.boolean().optional(),
+    valor_colacao: z.string().optional(),
+    baile: z.boolean().optional(),
+    valor_baile: z.string().optional(),
+    convite_extra: z.boolean().optional(),
+    valor_convite_extra: z.string().optional(),
+  })
+  .refine(
+    (data) => {
+      if (data.album) {
+        return !!data.valor_album && data.valor_album.trim() !== "";
+      }
+      return true;
+    },
+    { path: ["valor_album"], message: "Informe o valor do álbum" }
+  )
+  .refine(
+    (data) => {
+      if (data.colacao) {
+        return !!data.valor_colacao && data.valor_colacao.trim() !== "";
+      }
+      return true;
+    },
+    { path: ["valor_colacao"], message: "Informe o valor da colação" }
+  )
+  .refine(
+    (data) => {
+      if (data.baile) {
+        return !!data.valor_baile && data.valor_baile.trim() !== "";
+      }
+      return true;
+    },
+    { path: ["valor_baile"], message: "Informe o valor do baile" }
+  )
+  .refine(
+    (data) => {
+      if (data.convite_extra) {
+        return (
+          !!data.valor_convite_extra && data.valor_convite_extra.trim() !== ""
+        );
+      }
+      return true;
+    },
+    {
+      path: ["valor_convite_extra"],
+      message: "Informe o valor do convite extra",
+    }
+  );
 
 type FormSchema = z.infer<typeof formSchema>;
 
 type Escola = {
-  id: string
-  name: string
-}
+  id: string;
+  name: string;
+};
 
 interface UpsertAlunoFormProps {
   aluno?: typeof alunosTable.$inferSelect;
@@ -100,13 +125,16 @@ const UpsertAlunoForm = ({
   escolas = [],
   financeOpenByDefault = false,
 }: UpsertAlunoFormProps) => {
-  const [isFinanceOpen, setIsFinanceOpen] = React.useState<boolean>(financeOpenByDefault);
+  const [isFinanceOpen, setIsFinanceOpen] =
+    React.useState<boolean>(financeOpenByDefault);
   const form = useForm<FormSchema>({
     shouldUnregister: true,
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: aluno?.name ?? "",
+      codigo: aluno?.codigo ?? "",
       class: aluno?.class ?? "",
+      ano_formacao: aluno?.ano_formacao ?? "",
       address: aluno?.address ?? "",
       phone: aluno?.phone ?? "",
       sex: (aluno?.sex as "male" | "female") ?? "male",
@@ -181,7 +209,9 @@ const UpsertAlunoForm = ({
     form.setValue("valor_baile", asNumberString);
   };
 
-  const handleConviteExtraValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleConviteExtraValueChange = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const raw = e.target.value;
     const onlyDigits = raw.replace(/\D/g, "");
     if (!onlyDigits) {
@@ -210,6 +240,34 @@ const UpsertAlunoForm = ({
       </DialogHeader>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+          <div className="grid grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="codigo"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Código</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Código" maxLength={3} {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="ano_formacao"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Ano de Formação</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Ex: 2024" maxLength={4} {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
           <FormField
             control={form.control}
             name="name"
@@ -249,82 +307,94 @@ const UpsertAlunoForm = ({
               </FormItem>
             )}
           />
-          <FormField
-            control={form.control}
-            name="phone"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Telefone</FormLabel>
-                <FormControl>
-                  <Input placeholder="Numero do Telefone" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="sex"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Sexo</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o sexo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      <SelectLabel>Sexo</SelectLabel>
-                      <SelectItem value="male">Masculino</SelectItem>
-                      <SelectItem value="female">Feminino</SelectItem>
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="escola"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Escola</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione uma escola" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      <SelectLabel>Escolas</SelectLabel>
-                      {escolas && escolas.length > 0 ? (
-                        escolas.map((escola) => (
-                          <SelectItem key={escola.id} value={escola.id}>
-                            {escola.name}
+          <div className="grid grid-cols-3 gap-4">
+            <FormField
+              control={form.control}
+              name="phone"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Telefone</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Telefone" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="sex"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Sexo</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sexo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        <SelectLabel>Sexo</SelectLabel>
+                        <SelectItem value="male">Masculino</SelectItem>
+                        <SelectItem value="female">Feminino</SelectItem>
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="escola"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Escola</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Escola" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        <SelectLabel>Escolas</SelectLabel>
+                        {escolas && escolas.length > 0 ? (
+                          escolas.map((escola) => (
+                            <SelectItem key={escola.id} value={escola.id}>
+                              {escola.name}
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <SelectItem value="" disabled>
+                            Nenhuma escola encontrada
                           </SelectItem>
-                        ))
-                      ) : (
-                        <SelectItem value="" disabled>
-                          Nenhuma escola encontrada
-                        </SelectItem>
-                      )}
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+                        )}
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
 
           <DialogFooter>
             <Dialog open={isFinanceOpen} onOpenChange={setIsFinanceOpen}>
               <DialogTrigger asChild>
-                <Button type="button" variant="outline">Finanças</Button>
+                <Button type="button" variant="outline">
+                  Finanças
+                </Button>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>Finanças do Aluno</DialogTitle>
-                  <DialogDescription>Marque os itens e informe os valores.</DialogDescription>
+                  <DialogDescription>
+                    Marque os itens e informe os valores.
+                  </DialogDescription>
                 </DialogHeader>
 
                 <div className="space-y-4">
@@ -357,7 +427,9 @@ const UpsertAlunoForm = ({
                           <FormControl>
                             <Input
                               placeholder="R$ 0,00"
-                              value={field.value ? formatCurrency(field.value) : ""}
+                              value={
+                                field.value ? formatCurrency(field.value) : ""
+                              }
                               onChange={handleAlbumValueChange}
                             />
                           </FormControl>
@@ -396,7 +468,9 @@ const UpsertAlunoForm = ({
                           <FormControl>
                             <Input
                               placeholder="R$ 0,00"
-                              value={field.value ? formatCurrency(field.value) : ""}
+                              value={
+                                field.value ? formatCurrency(field.value) : ""
+                              }
                               onChange={handleColacaoValueChange}
                             />
                           </FormControl>
@@ -435,7 +509,9 @@ const UpsertAlunoForm = ({
                           <FormControl>
                             <Input
                               placeholder="R$ 0,00"
-                              value={field.value ? formatCurrency(field.value) : ""}
+                              value={
+                                field.value ? formatCurrency(field.value) : ""
+                              }
                               onChange={handleBaileValueChange}
                             />
                           </FormControl>
@@ -474,7 +550,9 @@ const UpsertAlunoForm = ({
                           <FormControl>
                             <Input
                               placeholder="R$ 0,00"
-                              value={field.value ? formatCurrency(field.value) : ""}
+                              value={
+                                field.value ? formatCurrency(field.value) : ""
+                              }
                               onChange={handleConviteExtraValueChange}
                             />
                           </FormControl>
@@ -490,7 +568,9 @@ const UpsertAlunoForm = ({
                       onClick={form.handleSubmit(onSubmit)}
                       disabled={upsertAlunoAction.isPending}
                     >
-                      {upsertAlunoAction.isPending ? "Salvando..." : "Salvar Finanças"}
+                      {upsertAlunoAction.isPending
+                        ? "Salvando..."
+                        : "Salvar Finanças"}
                     </Button>
                   </DialogFooter>
                 </div>
