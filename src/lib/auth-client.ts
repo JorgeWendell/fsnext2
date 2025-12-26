@@ -7,8 +7,8 @@ const getBaseURL = () => {
     return window.location.origin;
   }
   return process.env.NODE_ENV === "production"
-    ? "http://fs.adelbr.tech:3000"
-    : "http://localhost:3000";
+    ? "http://fs.adelbr.tech:4200"
+    : "http://localhost:4200";
 };
 
 export const authClient = createAuthClient({
