@@ -7,7 +7,7 @@ const getBaseURL = () => {
     return window.location.origin;
   }
   return process.env.NODE_ENV === "production"
-    ? "http://192.168.15.12:3000"
+    ? "http://fs.adelbr.tech:3000"
     : "http://localhost:3000";
 };
 
