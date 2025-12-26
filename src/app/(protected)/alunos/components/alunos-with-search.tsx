@@ -33,7 +33,7 @@ const AlunosWithSearch = ({ alunos, escolas }: AlunosWithSearchProps) => {
   const itemsPerPage = 15;
 
   const getEscolaName = (escolaId: string) => {
-    const escola = escolas.find(e => e.id === escolaId);
+    const escola = escolas.find((e) => e.id === escolaId);
     return escola?.name || "Escola não encontrada";
   };
 
@@ -141,17 +141,17 @@ const AlunosWithSearch = ({ alunos, escolas }: AlunosWithSearchProps) => {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <Search className="h-4 w-4 text-muted-foreground" />
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-center space-x-2 w-full sm:w-auto">
+          <Search className="h-4 w-4 text-muted-foreground flex-shrink-0" />
           <Input
-            placeholder="Buscar alunos... (ex: 001/100 para código aluno/escola)"
-            className="max-w-sm"
+            placeholder="Buscar alunos... (ex: 001/100)"
+            className="w-full sm:max-w-sm"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <div className="text-sm text-muted-foreground">
+        <div className="text-sm text-muted-foreground whitespace-nowrap">
           {filteredAlunos.length} aluno(s) encontrado(s)
         </div>
       </div>

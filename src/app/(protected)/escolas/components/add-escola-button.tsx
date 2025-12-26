@@ -8,26 +8,31 @@ import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 
 import UpsertEscolaForm from "./upsert-escola-form";
 
+import { escolasTable } from "@/db/schema";
+
 interface AddEscolaButtonProps {
   representantes: Array<{
     id: string;
     name: string;
   }>;
+  escolas?: typeof escolasTable.$inferSelect[];
 }
 
-const AddEscolaButton = ({ representantes }: AddEscolaButtonProps) => {
+const AddEscolaButton = ({ representantes, escolas = [] }: AddEscolaButtonProps) => {
   const [isOpen, setIsOpen] = useState(false);
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button>
+        <Button className="w-full sm:w-auto">
           <Plus />
-          Adicionar Escola
+          <span className="hidden sm:inline">Adicionar Escola</span>
+          <span className="sm:hidden">Adicionar</span>
         </Button>
       </DialogTrigger>
       <UpsertEscolaForm 
         onSuccess={() => setIsOpen(false)} 
         representantes={representantes}
+        escolas={escolas}
       />
     </Dialog>
   );

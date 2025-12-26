@@ -77,21 +77,23 @@ const AlunosTable = ({ alunos, escolas }: AlunosTableProps) => {
 
   return (
     <>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Código</TableHead>
-            <TableHead>Nome</TableHead>
-            <TableHead>Classe</TableHead>
-            <TableHead>Escola</TableHead>
-            <TableHead>Sexo</TableHead>
-            <TableHead>Álbum</TableHead>
-            <TableHead>Colação</TableHead>
-            <TableHead>Baile</TableHead>
-            <TableHead>Convite Extra</TableHead>
-            <TableHead className="text-right">Ações</TableHead>
-          </TableRow>
-        </TableHeader>
+      <div className="overflow-x-auto -mx-4 sm:mx-0">
+        <div className="inline-block min-w-full align-middle px-4 sm:px-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="min-w-[60px]">Código</TableHead>
+                <TableHead className="min-w-[150px]">Nome</TableHead>
+                <TableHead className="min-w-[100px] hidden md:table-cell">Classe</TableHead>
+                <TableHead className="min-w-[120px] hidden lg:table-cell">Escola</TableHead>
+                <TableHead className="min-w-[80px] hidden sm:table-cell">Sexo</TableHead>
+                <TableHead className="min-w-[80px] hidden md:table-cell">Álbum</TableHead>
+                <TableHead className="min-w-[80px] hidden md:table-cell">Colação</TableHead>
+                <TableHead className="min-w-[80px] hidden md:table-cell">Baile</TableHead>
+                <TableHead className="min-w-[100px] hidden lg:table-cell">Convite Extra</TableHead>
+                <TableHead className="text-right min-w-[100px]">Ações</TableHead>
+              </TableRow>
+            </TableHeader>
         <TableBody>
           {alunos.length === 0 ? (
             <TableRow>
@@ -106,11 +108,18 @@ const AlunosTable = ({ alunos, escolas }: AlunosTableProps) => {
             alunos.map((aluno) => (
               <TableRow key={aluno.id}>
                 <TableCell>{aluno.codigo}</TableCell>
-                <TableCell className="font-medium">{aluno.name}</TableCell>
-                <TableCell>{aluno.class}</TableCell>
-                <TableCell>{getEscolaName(aluno.escola)}</TableCell>
-                <TableCell>{formatSex(aluno.sex)}</TableCell>
-                <TableCell>
+                <TableCell className="font-medium">
+                  <div className="flex flex-col">
+                    <span>{aluno.name}</span>
+                    <span className="text-xs text-muted-foreground md:hidden">
+                      {aluno.class} • {formatSex(aluno.sex)}
+                    </span>
+                  </div>
+                </TableCell>
+                <TableCell className="hidden md:table-cell">{aluno.class}</TableCell>
+                <TableCell className="hidden lg:table-cell">{getEscolaName(aluno.escola)}</TableCell>
+                <TableCell className="hidden sm:table-cell">{formatSex(aluno.sex)}</TableCell>
+                <TableCell className="hidden md:table-cell">
                   {(
                     aluno as typeof alunosTable.$inferSelect & {
                       album?: boolean;
@@ -144,7 +153,7 @@ const AlunosTable = ({ alunos, escolas }: AlunosTableProps) => {
                     "Não"
                   )}
                 </TableCell>
-                <TableCell>
+                <TableCell className="hidden md:table-cell">
                   {(
                     aluno as typeof alunosTable.$inferSelect & {
                       colacao?: boolean;
@@ -178,7 +187,7 @@ const AlunosTable = ({ alunos, escolas }: AlunosTableProps) => {
                     "Não"
                   )}
                 </TableCell>
-                <TableCell>
+                <TableCell className="hidden md:table-cell">
                   {(
                     aluno as typeof alunosTable.$inferSelect & {
                       baile?: boolean;
@@ -212,7 +221,7 @@ const AlunosTable = ({ alunos, escolas }: AlunosTableProps) => {
                     "Não"
                   )}
                 </TableCell>
-                <TableCell>
+                <TableCell className="hidden lg:table-cell">
                   {(
                     aluno as typeof alunosTable.$inferSelect & {
                       convite_extra?: boolean;
@@ -247,7 +256,7 @@ const AlunosTable = ({ alunos, escolas }: AlunosTableProps) => {
                   )}
                 </TableCell>
                 <TableCell className="text-right">
-                  <div className="flex justify-end gap-2">
+                  <div className="flex justify-end gap-1 sm:gap-2">
                     <Dialog>
                       <DialogTrigger asChild>
                         <Button
@@ -298,7 +307,9 @@ const AlunosTable = ({ alunos, escolas }: AlunosTableProps) => {
             ))
           )}
         </TableBody>
-      </Table>
+          </Table>
+        </div>
+      </div>
     </>
   );
 };

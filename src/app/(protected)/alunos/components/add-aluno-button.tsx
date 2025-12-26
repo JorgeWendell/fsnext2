@@ -22,9 +22,10 @@ const AddAlunoButton = ({ escolas, alunos = [] }: AddAlunoButtonProps) => {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button>
+        <Button className="w-full sm:w-auto">
           <Plus />
-          Adicionar Aluno
+          <span className="hidden sm:inline">Adicionar Aluno</span>
+          <span className="sm:hidden">Adicionar</span>
         </Button>
       </DialogTrigger>
       <UpsertAlunoForm 

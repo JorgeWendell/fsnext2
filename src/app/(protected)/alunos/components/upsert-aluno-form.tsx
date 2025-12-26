@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import z from "zod";
 
 import { upsertAluno } from "@/actions/upsert-aluno";
+import { validateEmail, validatePhone } from "@/lib/validations";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -51,7 +52,14 @@ const formSchema = z
       .trim()
       .min(4, { message: "Ano de formação é obrigatório" }),
     address: z.string().trim().optional(),
-    phone: z.string().trim().optional(),
+    phone: z
+      .string()
+      .trim()
+      .optional()
+      .refine(
+        (val) => !val || validatePhone(val),
+        { message: "Telefone inválido" }
+      ),
     sex: z.enum(["male", "female"], { message: "Sexo é obrigatório" }),
     escola: z.string().trim().min(1, { message: "Escola é obrigatória" }),
     album: z.boolean().optional(),
@@ -263,7 +271,7 @@ const UpsertAlunoForm = ({
   };
 
   return (
-    <DialogContent>
+    <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[600px]">
       <DialogHeader>
         <DialogTitle>{aluno ? aluno.name : "Adicionar Aluno"}</DialogTitle>
         <DialogDescription>
@@ -272,7 +280,7 @@ const UpsertAlunoForm = ({
       </DialogHeader>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FormField
               control={form.control}
               name="codigo"
@@ -283,9 +291,9 @@ const UpsertAlunoForm = ({
                     <Input 
                       placeholder="Código" 
                       maxLength={3} 
-                      readOnly={!isEditing}
-                      disabled={!isEditing}
-                      className={!isEditing ? "bg-muted cursor-not-allowed" : ""}
+                      readOnly={isEditing}
+                      disabled={isEditing}
+                      className={isEditing ? "bg-muted cursor-not-allowed" : ""}
                       {...field} 
                     />
                   </FormControl>
@@ -293,6 +301,11 @@ const UpsertAlunoForm = ({
                   {!isEditing && (
                     <p className="text-xs text-muted-foreground">
                       Código gerado automaticamente
+                    </p>
+                  )}
+                  {isEditing && (
+                    <p className="text-xs text-muted-foreground">
+                      O código não pode ser alterado
                     </p>
                   )}
                 </FormItem>
@@ -351,7 +364,7 @@ const UpsertAlunoForm = ({
               </FormItem>
             )}
           />
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <FormField
               control={form.control}
               name="phone"
@@ -431,10 +444,10 @@ const UpsertAlunoForm = ({
             />
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
             <Dialog open={isFinanceOpen} onOpenChange={setIsFinanceOpen}>
               <DialogTrigger asChild>
-                <Button type="button" variant="outline">
+                <Button type="button" variant="outline" className="w-full sm:w-auto">
                   Finanças
                 </Button>
               </DialogTrigger>
@@ -626,7 +639,7 @@ const UpsertAlunoForm = ({
               </DialogContent>
             </Dialog>
 
-            <Button type="submit" disabled={upsertAlunoAction.isPending}>
+            <Button type="submit" disabled={upsertAlunoAction.isPending} className="w-full sm:w-auto">
               {upsertAlunoAction.isPending
                 ? "Salvando..."
                 : aluno

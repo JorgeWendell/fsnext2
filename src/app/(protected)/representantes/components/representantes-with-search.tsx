@@ -12,26 +12,20 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { Input } from "@/components/ui/input";
-import { escolasTable } from "@/db/schema";
+import { representantesTable } from "@/db/schema";
 
-import EscolaCard from "./escola-card";
+import RepresentanteCard from "./repre-card";
 
-type Representante = {
-  id: string;
-  name: string;
-};
-
-interface EscolasWithSearchProps {
-  escolas: typeof escolasTable.$inferSelect[];
-  representantes: Representante[];
+interface RepresentantesWithSearchProps {
+  representantes: typeof representantesTable.$inferSelect[];
 }
 
-const EscolasWithSearch = ({ escolas, representantes }: EscolasWithSearchProps) => {
+const RepresentantesWithSearch = ({ representantes }: RepresentantesWithSearchProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 15;
 
-  const filteredEscolas = escolas.filter((escola) => {
+  const filteredRepresentantes = representantes.filter((representante) => {
     if (!searchTerm.trim()) {
       return true;
     }
@@ -39,10 +33,8 @@ const EscolasWithSearch = ({ escolas, representantes }: EscolasWithSearchProps) 
     const searchLower = searchTerm.toLowerCase().trim();
 
     return (
-      escola.name.toLowerCase().includes(searchLower) ||
-      escola.codigo.toLowerCase().includes(searchLower) ||
-      (escola.phone || "").toLowerCase().includes(searchLower) ||
-      (escola.address || "").toLowerCase().includes(searchLower)
+      representante.name.toLowerCase().includes(searchLower) ||
+      (representante.phone || "").toLowerCase().includes(searchLower)
     );
   });
 
@@ -50,10 +42,10 @@ const EscolasWithSearch = ({ escolas, representantes }: EscolasWithSearchProps) 
     setCurrentPage(1);
   }, [searchTerm]);
 
-  const totalPages = Math.ceil(filteredEscolas.length / itemsPerPage);
+  const totalPages = Math.ceil(filteredRepresentantes.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const paginatedEscolas = filteredEscolas.slice(startIndex, endIndex);
+  const paginatedRepresentantes = filteredRepresentantes.slice(startIndex, endIndex);
 
   const getPageNumbers = () => {
     const pages: (number | "ellipsis")[] = [];
@@ -96,29 +88,27 @@ const EscolasWithSearch = ({ escolas, representantes }: EscolasWithSearchProps) 
         <div className="flex items-center space-x-2 w-full sm:w-auto">
           <Search className="h-4 w-4 text-muted-foreground flex-shrink-0" />
           <Input
-            placeholder="Buscar escolas..."
+            placeholder="Buscar representantes..."
             className="w-full sm:max-w-sm"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
         <div className="text-sm text-muted-foreground whitespace-nowrap">
-          {filteredEscolas.length} escola(s) encontrada(s)
+          {filteredRepresentantes.length} representante(s) encontrado(s)
         </div>
       </div>
-      {filteredEscolas.length === 0 ? (
+      {filteredRepresentantes.length === 0 ? (
         <div className="text-center text-muted-foreground py-8">
-          Nenhuma escola encontrada
+          Nenhum representante encontrado
         </div>
       ) : (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-            {paginatedEscolas.map((escola) => (
-              <EscolaCard
-                key={escola.id}
-                escola={escola}
-                representantes={representantes}
-                escolas={escolas}
+            {paginatedRepresentantes.map((representante) => (
+              <RepresentanteCard
+                key={representante.id}
+                representante={representante}
               />
             ))}
           </div>
@@ -185,5 +175,5 @@ const EscolasWithSearch = ({ escolas, representantes }: EscolasWithSearchProps) 
   );
 };
 
-export default EscolasWithSearch;
+export default RepresentantesWithSearch;
 

@@ -14,7 +14,7 @@ import { db } from "@/db";
 import { auth } from "@/lib/auth";
 
 import AddRepresentanteButton from "./components/add-repre-button";
-import RepresentanteCard from "./components/repre-card";
+import RepresentantesWithSearch from "./components/representantes-with-search";
 
 const RepresentantesPage = async () => {
   const session = await auth.api.getSession({
@@ -38,14 +38,7 @@ const RepresentantesPage = async () => {
         </PageActions>
       </PageHeader>
       <PageContent>
-        <div className="grid grid-cols-5 gap-6">
-          {representantes.map((representante) => (
-            <RepresentanteCard
-              key={representante.id}
-              representante={representante}
-            />
-          ))}
-        </div>
+        <RepresentantesWithSearch representantes={representantes} />
       </PageContent>
     </PageContainer>
   );

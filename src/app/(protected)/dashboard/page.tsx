@@ -18,7 +18,12 @@ import {
 } from "@/db/schema";
 import { auth } from "@/lib/auth";
 
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+
+import { PaymentMethodChart } from "./components/payment-method-chart";
+import { RevenueChart } from "./components/revenue-chart";
 import { StatsCard } from "./components/stats-card";
+import { UpcomingPaymentsAlert } from "./components/upcoming-payments-alert";
 
 const DashboardPage = async () => {
   const session = await auth.api.getSession({
@@ -80,6 +85,110 @@ const DashboardPage = async () => {
     }).format(value);
   };
 
+  const calculateRevenueByMonth = () => {
+    const monthMap = new Map<string, number>();
+    
+    finances.forEach((finance) => {
+      const date = new Date(finance.createdAt);
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+      const monthName = date.toLocaleDateString("pt-BR", { month: "short", year: "numeric" });
+      
+      let revenue = parseFloat(finance.valueTotal || "0");
+      
+      if (
+        (finance.method === "bank_slip" || finance.method === "creditparc") &&
+        finance.bank_slip &&
+        finance.parcelasPagas
+      ) {
+        try {
+          const parcelasPagas = JSON.parse(finance.parcelasPagas);
+          const totalParcelas = parseInt(finance.bank_slip, 10);
+          const parcelasPagasCount = Object.values(parcelasPagas).filter(
+            (pago) => pago === true
+          ).length;
+          
+          if (totalParcelas > 0 && parcelasPagasCount > 0) {
+            const valorPorParcela = revenue / totalParcelas;
+            revenue = valorPorParcela * parcelasPagasCount;
+          }
+        } catch (error) {
+          console.error("Erro ao processar parcelas pagas:", error);
+        }
+      }
+      
+      const current = monthMap.get(monthKey) || 0;
+      monthMap.set(monthKey, current + revenue);
+    });
+    
+    return Array.from(monthMap.entries())
+      .map(([key, revenue]) => {
+        const [year, month] = key.split("-");
+        const date = new Date(parseInt(year), parseInt(month) - 1);
+        return {
+          month: date.toLocaleDateString("pt-BR", { month: "short", year: "numeric" }),
+          revenue: Math.round(revenue),
+        };
+      })
+      .sort((a, b) => {
+        const dateA = new Date(a.month);
+        const dateB = new Date(b.month);
+        return dateA.getTime() - dateB.getTime();
+      })
+      .slice(-6);
+  };
+
+  const calculateRevenueByMethod = () => {
+    const methodMap = new Map<string, number>();
+    
+    const methodNames: Record<string, string> = {
+      pix: "PIX",
+      debit: "Débito",
+      creditvista: "Crédito à Vista",
+      creditparc: "Crédito Parcelado",
+      bank_slip: "Boleto",
+    };
+    
+    finances.forEach((finance) => {
+      let revenue = parseFloat(finance.valueTotal || "0");
+      
+      if (
+        (finance.method === "bank_slip" || finance.method === "creditparc") &&
+        finance.bank_slip &&
+        finance.parcelasPagas
+      ) {
+        try {
+          const parcelasPagas = JSON.parse(finance.parcelasPagas);
+          const totalParcelas = parseInt(finance.bank_slip, 10);
+          const parcelasPagasCount = Object.values(parcelasPagas).filter(
+            (pago) => pago === true
+          ).length;
+          
+          if (totalParcelas > 0 && parcelasPagasCount > 0) {
+            const valorPorParcela = revenue / totalParcelas;
+            revenue = valorPorParcela * parcelasPagasCount;
+          }
+        } catch (error) {
+          console.error("Erro ao processar parcelas pagas:", error);
+        }
+      }
+      
+      const methodName = methodNames[finance.method] || finance.method;
+      const current = methodMap.get(methodName) || 0;
+      methodMap.set(methodName, current + revenue);
+    });
+    
+    return Array.from(methodMap.entries())
+      .map(([name, value]) => ({
+        name,
+        value: Math.round(value),
+      }))
+      .filter((item) => item.value > 0)
+      .sort((a, b) => b.value - a.value);
+  };
+
+  const revenueByMonth = calculateRevenueByMonth();
+  const revenueByMethod = calculateRevenueByMethod();
+
   return (
     <PageContainer>
       <PageHeader>
@@ -91,7 +200,8 @@ const DashboardPage = async () => {
         </PageHeaderContent>
       </PageHeader>
       <PageContent>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <UpcomingPaymentsAlert finances={finances} />
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 mt-6">
           <StatsCard
             title="Total de Alunos"
             value={alunos.length}
@@ -122,7 +232,7 @@ const DashboardPage = async () => {
           />
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mt-4">
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 mt-4">
           <StatsCard
             title="Alunos com Álbum"
             value={alunosComAlbum}
@@ -152,6 +262,36 @@ const DashboardPage = async () => {
             gradient="from-amber-500/10 to-orange-500/10"
           />
         </div>
+
+        {revenueByMonth.length > 0 && (
+          <div className="grid gap-4 grid-cols-1 lg:grid-cols-2 mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Receita por Mês</CardTitle>
+                <CardDescription>
+                  Receita arrecadada nos últimos 6 meses
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <RevenueChart data={revenueByMonth} />
+              </CardContent>
+            </Card>
+
+            {revenueByMethod.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Receita por Método de Pagamento</CardTitle>
+                  <CardDescription>
+                    Distribuição da receita por forma de pagamento
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <PaymentMethodChart data={revenueByMethod} />
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        )}
       </PageContent>
     </PageContainer>
   );

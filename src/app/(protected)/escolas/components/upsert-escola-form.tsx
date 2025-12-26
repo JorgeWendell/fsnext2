@@ -1,6 +1,7 @@
 "use client";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useAction } from "next-safe-action/hooks";
+import * as React from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import z from "zod";
@@ -62,14 +63,17 @@ interface UpsertEscolaFormProps {
   escola?: typeof escolasTable.$inferSelect;
   onSuccess?: () => void;
   representantes: Representante[];
+  escolas?: typeof escolasTable.$inferSelect[];
 }
 
 const UpsertEscolaForm = ({
   escola,
   onSuccess,
   representantes = [],
+  escolas: allEscolas = [],
 }: UpsertEscolaFormProps) => {
-  console.log("UpsertEscolaForm - representantes:", representantes);
+  const isEditing = !!escola;
+  
   const form = useForm<FormSchema>({
     shouldUnregister: true,
     resolver: zodResolver(formSchema),
@@ -81,6 +85,23 @@ const UpsertEscolaForm = ({
       representante: escola?.representanteId ?? "",
     },
   });
+
+  const generateNextCodigo = React.useCallback(() => {
+    if (isEditing) return;
+
+    const totalEscolas = allEscolas.length;
+    const proximoNumero = totalEscolas + 1;
+    const codigo = 100 + (proximoNumero - 1) * 10;
+    const codigoFormatado = codigo.toString().padStart(3, "0");
+    
+    form.setValue("codigo", codigoFormatado);
+  }, [allEscolas, isEditing, form]);
+
+  React.useEffect(() => {
+    if (!isEditing) {
+      generateNextCodigo();
+    }
+  }, [isEditing, generateNextCodigo]);
 
   const upsertEscolaAction = useAction(upsertEscola, {
     onSuccess: () => {
@@ -101,7 +122,7 @@ const UpsertEscolaForm = ({
   };
 
   return (
-    <DialogContent>
+    <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[600px]">
       <DialogHeader>
         <DialogTitle>{escola ? escola.name : "Adicionar Escola"}</DialogTitle>
         <DialogDescription>
@@ -117,9 +138,26 @@ const UpsertEscolaForm = ({
               <FormItem>
                 <FormLabel>Código</FormLabel>
                 <FormControl>
-                  <Input placeholder="Código" maxLength={3} {...field} />
+                  <Input 
+                    placeholder="Código" 
+                    maxLength={3} 
+                    readOnly={isEditing}
+                    disabled={isEditing}
+                    className={isEditing ? "bg-muted cursor-not-allowed" : ""}
+                    {...field} 
+                  />
                 </FormControl>
                 <FormMessage />
+                {!isEditing && (
+                  <p className="text-xs text-muted-foreground">
+                    Código gerado automaticamente
+                  </p>
+                )}
+                {isEditing && (
+                  <p className="text-xs text-muted-foreground">
+                    O código não pode ser alterado
+                  </p>
+                )}
               </FormItem>
             )}
           />
