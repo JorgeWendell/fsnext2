@@ -7,7 +7,6 @@ import { toast } from "sonner";
 import z from "zod";
 
 import { upsertAluno } from "@/actions/upsert-aluno";
-import { validateEmail, validatePhone } from "@/lib/validations";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -37,6 +36,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { alunosTable } from "@/db/schema";
+import { validatePhone } from "@/lib/validations";
 
 const formSchema = z
   .object({

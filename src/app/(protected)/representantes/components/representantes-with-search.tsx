@@ -2,6 +2,7 @@
 import { Search } from "lucide-react";
 import { useEffect, useState } from "react";
 
+import { Input } from "@/components/ui/input";
 import {
   Pagination,
   PaginationContent,
@@ -11,7 +12,6 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import { Input } from "@/components/ui/input";
 import { representantesTable } from "@/db/schema";
 
 import RepresentanteCard from "./repre-card";

@@ -5,10 +5,9 @@ import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
+import { escolasTable } from "@/db/schema";
 
 import UpsertEscolaForm from "./upsert-escola-form";
-
-import { escolasTable } from "@/db/schema";
 
 interface AddEscolaButtonProps {
   representantes: Array<{

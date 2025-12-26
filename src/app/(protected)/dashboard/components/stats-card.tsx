@@ -4,10 +4,10 @@ import {
   BookImage,
   CircleDollarSign,
   GraduationCap,
+  type LucideIcon,
   School,
   TrendingUp,
   UserPen,
-  type LucideIcon,
 } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

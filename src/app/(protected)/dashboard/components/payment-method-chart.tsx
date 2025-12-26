@@ -2,18 +2,18 @@
 
 import {
   Cell,
+  Legend,
   Pie,
   PieChart,
   ResponsiveContainer,
   Tooltip,
-  Legend,
 } from "recharts";
 
 interface PaymentMethodChartProps {
   data: Array<{
     name: string;
     value: number;
-    color: string;
+    color?: string;
   }>;
 }
 
@@ -44,7 +44,7 @@ export function PaymentMethodChart({ data }: PaymentMethodChartProps) {
           cy="50%"
           labelLine={false}
           label={({ name, percent }) =>
-            `${name}: ${(percent * 100).toFixed(0)}%`
+            `${name}: ${((percent || 0) * 100).toFixed(0)}%`
           }
           outerRadius={80}
           fill="#8884d8"
@@ -60,7 +60,7 @@ export function PaymentMethodChart({ data }: PaymentMethodChartProps) {
             border: "1px solid hsl(var(--border))",
             borderRadius: "var(--radius)",
           }}
-          formatter={(value: number) => formatCurrency(value)}
+          formatter={(value: number | undefined) => formatCurrency(value || 0)}
         />
         <Legend />
       </PieChart>

@@ -52,7 +52,7 @@ export function RevenueChart({ data }: RevenueChartProps) {
             border: "1px solid hsl(var(--border))",
             borderRadius: "var(--radius)",
           }}
-          formatter={(value: number) => formatCurrency(value)}
+          formatter={(value: number | undefined) => formatCurrency(value || 0)}
         />
         <Bar
           dataKey="revenue"

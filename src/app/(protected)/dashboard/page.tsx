@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   PageContainer,
   PageContent,
@@ -17,8 +18,6 @@ import {
   representantesTable,
 } from "@/db/schema";
 import { auth } from "@/lib/auth";
-
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 import { PaymentMethodChart } from "./components/payment-method-chart";
 import { RevenueChart } from "./components/revenue-chart";
@@ -91,7 +90,6 @@ const DashboardPage = async () => {
     finances.forEach((finance) => {
       const date = new Date(finance.createdAt);
       const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-      const monthName = date.toLocaleDateString("pt-BR", { month: "short", year: "numeric" });
       
       let revenue = parseFloat(finance.valueTotal || "0");
       
