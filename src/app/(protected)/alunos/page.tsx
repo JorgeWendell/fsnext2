@@ -76,7 +76,7 @@ const AlunosPage = async () => {
           <PageDescription>Gerencie seus alunos</PageDescription>
         </PageHeaderContent>
         <PageActions>
-          <AddAlunoButton escolas={escolasArray} />
+          <AddAlunoButton escolas={escolasArray} alunos={alunos} />
         </PageActions>
       </PageHeader>
       <PageContent>

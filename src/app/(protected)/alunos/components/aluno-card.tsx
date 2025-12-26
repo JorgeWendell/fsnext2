@@ -58,31 +58,34 @@ const AlunoCard = ({ aluno, escolas }: AlunoCardProps) => {
     .join("");
 
   return (
-    <Card>
-      <CardHeader>
+    <Card className="relative overflow-hidden border-border/50 transition-all duration-300 hover:shadow-lg hover:scale-[1.02] group">
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-cyan-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+      <CardHeader className="relative">
         <div className="flex items-center gap-4">
-          <Avatar className="h-10 w-10">
-            <AvatarFallback>{alunoInitials}</AvatarFallback>
+          <Avatar className="h-12 w-12 ring-2 ring-primary/20 transition-all duration-300 group-hover:ring-primary/40">
+            <AvatarFallback className="bg-gradient-to-br from-blue-500 to-cyan-500 text-white font-semibold">
+              {alunoInitials}
+            </AvatarFallback>
           </Avatar>
-          <div>
-            <p className="text-xs text-muted-foreground">
+          <div className="flex-1 min-w-0">
+            <p className="text-xs text-muted-foreground font-medium">
               Código: {aluno.codigo}
             </p>
-            <h3 className="text-sm font-medium">{aluno.name}</h3>
-            <p className="text-sm text-muted-foreground">
+            <h3 className="text-sm font-semibold mt-1 truncate">{aluno.name}</h3>
+            <p className="text-sm text-muted-foreground mt-0.5">
               Classe: {aluno.class}
             </p>
             <p className="text-sm text-muted-foreground">
-              Telefone: {aluno.phone}
+              {aluno.phone}
             </p>
-            <div className="flex gap-2 mt-1">
+            <div className="flex flex-wrap gap-2 mt-2">
               {(
                 aluno as typeof alunosTable.$inferSelect & {
                   album?: boolean;
                   valor_album?: string;
                 }
               )?.album && (
-                <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                <span className="text-xs bg-blue-500/10 text-blue-700 dark:text-blue-400 px-2.5 py-1 rounded-full font-medium border border-blue-500/20">
                   Álbum
                   {(
                     aluno as typeof alunosTable.$inferSelect & {
@@ -108,7 +111,7 @@ const AlunoCard = ({ aluno, escolas }: AlunoCardProps) => {
                   valor_colacao?: string;
                 }
               )?.colacao && (
-                <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
+                <span className="text-xs bg-green-500/10 text-green-700 dark:text-green-400 px-2.5 py-1 rounded-full font-medium border border-green-500/20">
                   Colação
                   {(
                     aluno as typeof alunosTable.$inferSelect & {
@@ -134,7 +137,7 @@ const AlunoCard = ({ aluno, escolas }: AlunoCardProps) => {
                   valor_baile?: string;
                 }
               )?.baile && (
-                <span className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded">
+                <span className="text-xs bg-purple-500/10 text-purple-700 dark:text-purple-400 px-2.5 py-1 rounded-full font-medium border border-purple-500/20">
                   Baile
                   {(
                     aluno as typeof alunosTable.$inferSelect & {
@@ -160,7 +163,7 @@ const AlunoCard = ({ aluno, escolas }: AlunoCardProps) => {
                   valor_convite_extra?: string;
                 }
               )?.convite_extra && (
-                <span className="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded">
+                <span className="text-xs bg-orange-500/10 text-orange-700 dark:text-orange-400 px-2.5 py-1 rounded-full font-medium border border-orange-500/20">
                   Convite Extra
                   {(
                     aluno as typeof alunosTable.$inferSelect & {
@@ -184,14 +187,16 @@ const AlunoCard = ({ aluno, escolas }: AlunoCardProps) => {
           </div>
         </div>
       </CardHeader>
-      <Separator />
-      <CardFooter className="flex flex-col gap-2">
+      <Separator className="relative" />
+      <CardFooter className="relative flex flex-col gap-2 pt-4">
         <Dialog
           open={isUpsertAlunoDialogOpen}
           onOpenChange={setIsUpsertAlunoDialogOpen}
         >
           <DialogTrigger asChild>
-            <Button className="w-full">Ver Detalhes</Button>
+            <Button className="w-full transition-all duration-200 hover:scale-[1.02]">
+              Ver Detalhes
+            </Button>
           </DialogTrigger>
           <UpsertAlunoForm
             aluno={aluno}
@@ -201,7 +206,7 @@ const AlunoCard = ({ aluno, escolas }: AlunoCardProps) => {
         </Dialog>
         <AlertDialog>
           <AlertDialogTrigger asChild>
-            <Button variant="outline" className="w-full">
+            <Button variant="outline" className="w-full transition-all duration-200 hover:scale-[1.02]">
               <TrashIcon />
               Deletar
             </Button>

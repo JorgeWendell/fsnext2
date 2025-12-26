@@ -9,16 +9,13 @@ import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { FormControl, FormMessage } from "@/components/ui/form";
-import { FormItem, FormLabel } from "@/components/ui/form";
-import { Form, FormField } from "@/components/ui/form";
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { authClient } from "@/lib/auth-client";
 
@@ -69,22 +66,29 @@ const SignUpForm = () => {
   }
 
   return (
-    <Card>
+    <div className="p-6">
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <CardHeader>
-            <CardTitle>Criar conta</CardTitle>
-            <CardDescription>Crie uma conta para continuar.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+          <div className="space-y-1">
+            <h2 className="text-2xl font-semibold tracking-tight">Criar nova conta</h2>
+            <p className="text-sm text-muted-foreground">
+              Preencha os dados abaixo para começar
+            </p>
+          </div>
+          
+          <div className="space-y-4">
             <FormField
               control={form.control}
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nome</FormLabel>
+                  <FormLabel>Nome completo</FormLabel>
                   <FormControl>
-                    <Input placeholder="Digite seu nome" {...field} />
+                    <Input 
+                      placeholder="Seu nome" 
+                      className="h-11 transition-all duration-200 focus:scale-[1.01]"
+                      {...field} 
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -97,7 +101,12 @@ const SignUpForm = () => {
                 <FormItem>
                   <FormLabel>E-mail</FormLabel>
                   <FormControl>
-                    <Input placeholder="Digite seu e-mail" {...field} />
+                    <Input 
+                      placeholder="seu@email.com" 
+                      type="email"
+                      className="h-11 transition-all duration-200 focus:scale-[1.01]"
+                      {...field} 
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -111,32 +120,38 @@ const SignUpForm = () => {
                   <FormLabel>Senha</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="Digite sua senha"
+                      placeholder="••••••••"
                       type="password"
+                      className="h-11 transition-all duration-200 focus:scale-[1.01]"
                       {...field}
                     />
                   </FormControl>
                   <FormMessage />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Mínimo de 8 caracteres
+                  </p>
                 </FormItem>
               )}
             />
-          </CardContent>
-          <CardFooter>
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={form.formState.isSubmitting}
-            >
-              {form.formState.isSubmitting ? (
+          </div>
+          
+          <Button
+            type="submit"
+            className="w-full h-11 text-base font-medium transition-all duration-200 hover:scale-[1.02]"
+            disabled={form.formState.isSubmitting}
+          >
+            {form.formState.isSubmitting ? (
+              <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                "Criar conta"
-              )}
-            </Button>
-          </CardFooter>
+                Criando conta...
+              </>
+            ) : (
+              "Criar conta"
+            )}
+          </Button>
         </form>
       </Form>
-    </Card>
+    </div>
   );
 };
 

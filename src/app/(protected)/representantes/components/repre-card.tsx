@@ -50,30 +50,33 @@ const RepresentanteCard = ({ representante }: RepresentanteCardProps) => {
     .map((name) => name.charAt(0))
     .join("");
   return (
-    <Card>
-      <CardHeader>
+    <Card className="relative overflow-hidden border-border/50 transition-all duration-300 hover:shadow-lg hover:scale-[1.02] group">
+      <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-emerald-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+      <CardHeader className="relative">
         <div className="flex items-center gap-4">
-          <Avatar className="h-10 w-10">
-            <AvatarFallback>{representanteInitials}</AvatarFallback>
+          <Avatar className="h-12 w-12 ring-2 ring-primary/20 transition-all duration-300 group-hover:ring-primary/40">
+            <AvatarFallback className="bg-gradient-to-br from-green-500 to-emerald-500 text-white font-semibold">
+              {representanteInitials}
+            </AvatarFallback>
           </Avatar>
-          <div>
-            <h3 className="text-sm font-medium">{representante.name}</h3>
-            <p className="text-sm text-muted-foreground">
-              {" "}
-              Celular:
+          <div className="flex-1 min-w-0">
+            <h3 className="text-sm font-semibold truncate">{representante.name}</h3>
+            <p className="text-sm text-muted-foreground mt-0.5">
               {representante.phone}
             </p>
           </div>
         </div>
       </CardHeader>
-      <Separator />
-      <CardFooter className="flex flex-col gap-2">
+      <Separator className="relative" />
+      <CardFooter className="relative flex flex-col gap-2 pt-4">
         <Dialog
           open={isUpsertRepresentanteDialogOpen}
           onOpenChange={setIsUpsertRepresentanteDialogOpen}
         >
           <DialogTrigger asChild>
-            <Button className="w-full">Ver Detalhes</Button>
+            <Button className="w-full transition-all duration-200 hover:scale-[1.02]">
+              Ver Detalhes
+            </Button>
           </DialogTrigger>
           <UpsertRepresentanteForm
             representante={representante}
@@ -82,7 +85,7 @@ const RepresentanteCard = ({ representante }: RepresentanteCardProps) => {
         </Dialog>
         <AlertDialog>
           <AlertDialogTrigger asChild>
-            <Button variant="outline" className="w-full">
+            <Button variant="outline" className="w-full transition-all duration-200 hover:scale-[1.02]">
               <TrashIcon />
               Deletar
             </Button>

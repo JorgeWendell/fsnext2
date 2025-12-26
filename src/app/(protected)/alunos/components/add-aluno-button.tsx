@@ -5,6 +5,7 @@ import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
+import { alunosTable } from "@/db/schema";
 
 import UpsertAlunoForm from "./upsert-aluno-form";
 
@@ -13,9 +14,10 @@ interface AddAlunoButtonProps {
     id: string;
     name: string;
   }>;
+  alunos?: typeof alunosTable.$inferSelect[];
 }
 
-const AddAlunoButton = ({ escolas }: AddAlunoButtonProps) => {
+const AddAlunoButton = ({ escolas, alunos = [] }: AddAlunoButtonProps) => {
   const [isOpen, setIsOpen] = useState(false);
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -28,6 +30,7 @@ const AddAlunoButton = ({ escolas }: AddAlunoButtonProps) => {
       <UpsertAlunoForm 
         onSuccess={() => setIsOpen(false)} 
         escolas={escolas}
+        alunos={alunos}
       />
     </Dialog>
   );

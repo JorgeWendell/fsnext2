@@ -116,6 +116,7 @@ interface UpsertAlunoFormProps {
   aluno?: typeof alunosTable.$inferSelect;
   onSuccess?: () => void;
   escolas: Escola[];
+  alunos?: typeof alunosTable.$inferSelect[];
   financeOpenByDefault?: boolean;
 }
 
@@ -123,10 +124,13 @@ const UpsertAlunoForm = ({
   aluno,
   onSuccess,
   escolas = [],
+  alunos: allAlunos = [],
   financeOpenByDefault = false,
 }: UpsertAlunoFormProps) => {
   const [isFinanceOpen, setIsFinanceOpen] =
     React.useState<boolean>(financeOpenByDefault);
+  const isEditing = !!aluno;
+  
   const form = useForm<FormSchema>({
     shouldUnregister: true,
     resolver: zodResolver(formSchema),
@@ -149,6 +153,34 @@ const UpsertAlunoForm = ({
       valor_convite_extra: aluno?.valor_convite_extra ?? "",
     },
   });
+
+  const generateNextCodigo = React.useCallback((escolaId: string) => {
+    if (!escolaId || isEditing) return;
+
+    const alunosDaEscola = allAlunos.filter(
+      (a) => a.escola === escolaId
+    );
+
+    const codigosExistentes = alunosDaEscola
+      .map((a) => parseInt(a.codigo, 10))
+      .filter((codigo) => !isNaN(codigo))
+      .sort((a, b) => b - a);
+
+    const proximoCodigo = codigosExistentes.length > 0
+      ? codigosExistentes[0] + 1
+      : 1;
+
+    const codigoFormatado = proximoCodigo.toString().padStart(3, "0");
+    form.setValue("codigo", codigoFormatado);
+  }, [allAlunos, isEditing, form]);
+
+  const escolaSelecionada = form.watch("escola");
+
+  React.useEffect(() => {
+    if (escolaSelecionada && !isEditing) {
+      generateNextCodigo(escolaSelecionada);
+    }
+  }, [escolaSelecionada, isEditing, generateNextCodigo]);
 
   const upsertAlunoAction = useAction(upsertAluno, {
     onSuccess: () => {
@@ -248,9 +280,21 @@ const UpsertAlunoForm = ({
                 <FormItem>
                   <FormLabel>Código</FormLabel>
                   <FormControl>
-                    <Input placeholder="Código" maxLength={3} {...field} />
+                    <Input 
+                      placeholder="Código" 
+                      maxLength={3} 
+                      readOnly={!isEditing}
+                      disabled={!isEditing}
+                      className={!isEditing ? "bg-muted cursor-not-allowed" : ""}
+                      {...field} 
+                    />
                   </FormControl>
                   <FormMessage />
+                  {!isEditing && (
+                    <p className="text-xs text-muted-foreground">
+                      Código gerado automaticamente
+                    </p>
+                  )}
                 </FormItem>
               )}
             />
@@ -353,8 +397,13 @@ const UpsertAlunoForm = ({
                 <FormItem>
                   <FormLabel>Escola</FormLabel>
                   <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
+                    onValueChange={(value) => {
+                      field.onChange(value);
+                      if (!isEditing) {
+                        generateNextCodigo(value);
+                      }
+                    }}
+                    value={field.value}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Escola" />

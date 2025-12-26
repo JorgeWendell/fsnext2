@@ -15,7 +15,7 @@ import { escolasTable, representantesTable } from "@/db/schema";
 import { auth } from "@/lib/auth";
 
 import AddEscolaButton from "./components/add-escola-button";
-import EscolaCard from "./components/escola-card";
+import EscolasWithSearch from "./components/escolas-with-search";
 
 const EscolasPage = async () => {
   const session = await auth.api.getSession({
@@ -80,15 +80,10 @@ const EscolasPage = async () => {
         </PageActions>
       </PageHeader>
       <PageContent>
-        <div className="grid grid-cols-5 gap-6">
-          {escolas?.map((escola) => (
-            <EscolaCard
-              key={escola.id}
-              escola={escola}
-              representantes={representantesArray}
-            />
-          ))}
-        </div>
+        <EscolasWithSearch
+          escolas={escolas}
+          representantes={representantesArray}
+        />
       </PageContent>
     </PageContainer>
   );

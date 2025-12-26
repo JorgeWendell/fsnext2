@@ -6,15 +6,20 @@ import {
   GraduationCap,
   LayoutDashboard,
   LogOut,
+  Moon,
   School,
   Settings,
+  Sun,
   UserPen,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useTheme } from "next-themes";
+import { useEffect, useState } from "react";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -76,10 +81,17 @@ const items = [
 
 export function AppSidebar() {
   const router = useRouter();
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
 
   const session = authClient.useSession();
 
   const pathname = usePathname();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const handleSignOut = async () => {
     await authClient.signOut({
       fetchOptions: {
@@ -89,6 +101,7 @@ export function AppSidebar() {
       },
     });
   };
+
   return (
     <Sidebar>
       <SidebarHeader className="p-4 border-b items-center">
@@ -115,6 +128,24 @@ export function AppSidebar() {
       </SidebarContent>
       <SidebarFooter>
         <SidebarMenu>
+          <SidebarMenuItem>
+            <div className="flex items-center gap-2 px-2 py-1.5">
+              {mounted && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                  className="h-8 w-8"
+                >
+                  {theme === "dark" ? (
+                    <Sun className="h-4 w-4" />
+                  ) : (
+                    <Moon className="h-4 w-4" />
+                  )}
+                </Button>
+              )}
+            </div>
+          </SidebarMenuItem>
           <SidebarMenuItem>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
