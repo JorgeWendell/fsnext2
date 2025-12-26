@@ -37,5 +37,8 @@ export const auth = betterAuth({
     "https://fs.adelbr.tech",
     "http://fs.adelbr.tech:3000",
   ],
-  baseURL: process.env.BETTER_AUTH_URL || process.env.NEXT_PUBLIC_BASE_URL,
+  baseURL:
+    process.env.NODE_ENV === "production"
+      ? "http://fs.adelbr.tech:3000"
+      : "http://192.168.15.53:3000",
 });
