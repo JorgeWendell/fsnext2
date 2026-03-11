@@ -70,8 +70,9 @@ else
   echo "Arquivo .env já existe, não foi modificado."
 fi
 
-# ====== INSTALAR DEPENDÊNCIAS E BUILDAR ======
+# ====== INSTALAR DEPENDÊNCIAS, MIGRAÇÕES E BUILDAR ======
 npm install
+npx drizzle-kit push
 npm run build
 
 # ====== PM2: INICIAR E CONFIGURAR NO BOOT ======
