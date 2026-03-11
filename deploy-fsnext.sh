@@ -43,6 +43,9 @@ EOF
 curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
 sudo apt install -y nodejs build-essential
 
+# ====== NPM (ATUALIZAR PARA A VERSÃO MAIS RECENTE) ======
+sudo npm install -g npm@latest
+
 # ====== PM2 GLOBAL ======
 sudo npm install -g pm2
 
