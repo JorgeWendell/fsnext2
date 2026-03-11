@@ -12,6 +12,33 @@ sudo apt update && sudo apt upgrade -y
 # ====== PACOTES BÁSICOS ======
 sudo apt install -y curl git nginx python3-certbot-nginx
 
+# ====== POSTGRESQL ======
+sudo apt install -y postgresql postgresql-contrib
+
+sudo systemctl enable postgresql
+sudo systemctl start postgresql
+
+sudo -u postgres psql <<'EOF'
+DO
+$$
+BEGIN
+   IF NOT EXISTS (
+      SELECT FROM pg_catalog.pg_user WHERE usename = 'fsnext_user'
+   ) THEN
+      CREATE USER fsnext_user WITH PASSWORD 'AdEL@I797';
+   END IF;
+
+   IF NOT EXISTS (
+      SELECT FROM pg_database WHERE datname = 'fsnext'
+   ) THEN
+      CREATE DATABASE fsnext OWNER fsnext_user;
+   END IF;
+
+   GRANT ALL PRIVILEGES ON DATABASE fsnext TO fsnext_user;
+END
+$$;
+EOF
+
 # ====== NODE.JS (22.x) ======
 curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
 sudo apt install -y nodejs build-essential
@@ -36,7 +63,7 @@ cd "$APP_DIR"
 # ====== ARQUIVO .env (usa a DATABASE_URL combinada) ======
 if [ ! -f .env ]; then
   cat <<EOF > .env
-DATABASE_URL="postgres://fsnext_user:AdEL%40I797@localhost:5432/fsnext"
+DATABASE_URL="postgres://fsnext_user:Lucas%40120908@localhost:5432/fsnext"
 EOF
   echo "Arquivo .env criado com DATABASE_URL padrão. Ajuste se necessário."
 else
