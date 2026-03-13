@@ -39,15 +39,23 @@ END
 $$;
 EOF
 
-# ====== NODE.JS (22.x) ======
-curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
-sudo apt install -y nodejs build-essential
+# ====== NVM + NODE.JS 24.x ======
+if [ ! -d "$HOME/.nvm" ]; then
+  curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.0/install.sh | bash
+fi
+
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+
+nvm install 24
+nvm use 24
+nvm alias default 24
 
 # ====== NPM (ATUALIZAR PARA A VERSÃO MAIS RECENTE) ======
-sudo npm install -g npm@latest
+npm install -g npm@latest
 
 # ====== PM2 GLOBAL ======
-sudo npm install -g pm2
+npm install -g pm2
 
 # ====== CÓDIGO DA APLICAÇÃO ======
 # Cria pasta da aplicação, se não existir
