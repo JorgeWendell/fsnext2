@@ -74,10 +74,6 @@ export const HeaderStocky = () => {
   const userName = session.data?.user.name || "Usuário";
 
   const breadcrumbs = getBreadcrumbs(pathname);
-  const title =
-    pageTitleMap[pathname] ||
-    breadcrumbs[breadcrumbs.length - 1]?.label ||
-    "Dashboard";
 
   const getInitials = (name: string) => {
     return name
