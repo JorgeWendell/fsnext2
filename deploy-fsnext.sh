@@ -57,7 +57,7 @@ sudo chown -R "$USER":"$USER" "$APP_DIR"
 cd "$APP_DIR"
 
 # Se quiser clonar o repo aqui, descomente e ajuste:
-# git clone https://seu-repositorio.git .
+# git clone https://github.com/JorgeWendell/fsnext .
 # git checkout main
 
 # Se você já copiou os arquivos do projeto para $APP_DIR,

@@ -59,6 +59,18 @@ const EscolaCard = ({ escola, representantes, escolas = [] }: EscolaCardProps) =
     .map((name) => name.charAt(0))
     .join("");
 
+  const formatPhone = (phone: string | null) => {
+    if (!phone) return "Não informado";
+    const digits = phone.replace(/\D/g, "");
+    if (digits.length !== 11) {
+      return phone;
+    }
+    const ddd = digits.slice(0, 2);
+    const first = digits.slice(2, 7);
+    const last = digits.slice(7);
+    return `(${ddd}) ${first}-${last}`;
+  };
+
   return (
     <Card className="relative overflow-hidden border-border/50 transition-all duration-300 hover:shadow-lg hover:scale-[1.02] group">
       <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-pink-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -75,7 +87,7 @@ const EscolaCard = ({ escola, representantes, escolas = [] }: EscolaCardProps) =
             </p>
             <h3 className="text-sm font-semibold mt-1 truncate">{escola.name}</h3>
             <p className="text-sm text-muted-foreground mt-0.5">
-              {escola.phone || "Não informado"}
+              {formatPhone(escola.phone)}
             </p>
           </div>
         </div>

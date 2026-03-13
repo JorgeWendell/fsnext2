@@ -1,5 +1,7 @@
 "use client";
+
 import { Search } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { Input } from "@/components/ui/input";
@@ -28,6 +30,7 @@ interface AlunosWithSearchProps {
 }
 
 const AlunosWithSearch = ({ alunos, escolas }: AlunosWithSearchProps) => {
+  const searchParams = useSearchParams();
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 15;
@@ -54,6 +57,7 @@ const AlunosWithSearch = ({ alunos, escolas }: AlunosWithSearchProps) => {
 
     if (searchTerm.includes("/")) {
       const parts = searchTerm.split("/");
+
       if (parts.length === 2) {
         const codigoAluno = parts[0].trim();
         const codigoEscola = parts[1].trim();
@@ -64,6 +68,24 @@ const AlunosWithSearch = ({ alunos, escolas }: AlunosWithSearchProps) => {
           return (
             aluno.codigo === codigoAluno &&
             aluno.escola === escolaEncontrada.id
+          );
+        }
+
+        return false;
+      }
+
+      if (parts.length === 3) {
+        const codigoAluno = parts[0].trim();
+        const codigoEscola = parts[1].trim();
+        const anoSufixo = parts[2].trim();
+
+        const escolaEncontrada = getEscolaByCodigo(codigoEscola);
+
+        if (escolaEncontrada) {
+          return (
+            aluno.codigo === codigoAluno &&
+            aluno.escola === escolaEncontrada.id &&
+            aluno.ano_formacao.endsWith(anoSufixo)
           );
         }
 
@@ -98,6 +120,11 @@ const AlunosWithSearch = ({ alunos, escolas }: AlunosWithSearchProps) => {
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm]);
+
+  useEffect(() => {
+    const initialSearch = searchParams.get("search") || "";
+    setSearchTerm(initialSearch);
+  }, [searchParams]);
 
   const totalPages = Math.ceil(filteredAlunos.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;

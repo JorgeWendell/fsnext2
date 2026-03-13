@@ -1,6 +1,9 @@
+"use client";
+
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useAction } from "next-safe-action/hooks";
 import { useForm } from "react-hook-form";
+import { PatternFormat } from "react-number-format";
 import { toast } from "sonner";
 import z from "zod";
 
@@ -97,7 +100,17 @@ const UpsertRepresentanteForm = ({
               <FormItem>
                 <FormLabel>Celular</FormLabel>
                 <FormControl>
-                  <Input placeholder="Numero do Celular" {...field} />
+                  <PatternFormat
+                    format="(##) #####-####"
+                    mask="_"
+                    value={field.value ?? ""}
+                    onValueChange={(values) => {
+                      field.onChange(values.value);
+                    }}
+                    getInputRef={field.ref}
+                    onBlur={field.onBlur}
+                    customInput={Input}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>

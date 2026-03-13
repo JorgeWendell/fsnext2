@@ -32,13 +32,13 @@ export const auth = betterAuth({
     max: 100,
   },
   trustedOrigins: [
-    "http://localhost:4200",
-    "http://192.168.15.12:4200",
+    "http://localhost:3000",
+    "http://192.168.15.12:3000",
     "https://fs.adelbr.tech",
     "http://fs.adelbr.tech:4200",
   ],
   baseURL:
     process.env.NODE_ENV === "production"
       ? "http://fs.adelbr.tech:4200"
-      : "http://192.168.15.50:4200",
+      : "http://localhost:3000",
 });

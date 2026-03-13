@@ -1,19 +1,16 @@
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-
-import { AppSidebar } from "./components/app-sidebar";
+import { HeaderStocky } from "./components/header-stocky";
+import { SidebarStocky } from "./components/sidebar-stocky";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <SidebarProvider>
-      <AppSidebar />
-      <main className="w-full min-h-screen bg-background">
-        <div className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-          <div className="flex h-14 items-center px-4">
-            <SidebarTrigger />
-          </div>
+    <div className="flex min-h-screen bg-background">
+      <SidebarStocky />
+      <main className="flex-1 flex flex-col">
+        <div className="sticky top-0 z-10">
+          <HeaderStocky />
         </div>
         <div className="flex-1">{children}</div>
       </main>
-    </SidebarProvider>
+    </div>
   );
 }
