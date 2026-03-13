@@ -4,6 +4,7 @@ import {
   Bell,
   ChevronRight,
   LogOut,
+  Menu,
   Moon,
   Search,
   Sun,
@@ -64,7 +65,11 @@ const getBreadcrumbs = (
   return breadcrumbs;
 };
 
-export const HeaderStocky = () => {
+type HeaderStockyProps = {
+  onToggleSidebar?: () => void;
+};
+
+export const HeaderStocky = ({ onToggleSidebar }: HeaderStockyProps) => {
   const pathname = usePathname();
   const router = useRouter();
   const { theme, toggleTheme } = useTheme();
@@ -107,7 +112,20 @@ export const HeaderStocky = () => {
   return (
     <header className="border-b border-slate-200 bg-white px-6 py-4 dark:border-slate-800 dark:bg-slate-900">
       <div className="flex items-center justify-between gap-4">
-        <div className="flex flex-1 flex-col gap-2">
+        <div className="flex flex-1 items-center gap-2">
+          {onToggleSidebar && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="md:hidden"
+              onClick={onToggleSidebar}
+              aria-label="Abrir menu"
+            >
+              <Menu className="h-5 w-5" />
+            </Button>
+          )}
+          <div className="flex flex-1 flex-col gap-2">
           <div className="flex items-center gap-2 text-sm">
             {breadcrumbs.map((crumb, index) => {
               const isLast = index === breadcrumbs.length - 1;
@@ -132,6 +150,7 @@ export const HeaderStocky = () => {
                 </div>
               );
             })}
+          </div>
           </div>
         </div>
 
