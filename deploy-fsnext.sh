@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # ====== CONFIGURAÇÕES BÁSICAS (EDITE ANTES DE RODAR) ======
-APP_DIR="/var/www/fsnext"        # pasta onde o projeto vai ficar no servidor
+APP_DIR="/var/www/fsnext2"        # pasta onde o projeto vai ficar no servidor
 DOMAIN="fs.adelbr.tech"         # troque pelo seu domínio real
 APP_PORT=3000                    # porta onde o Next.js vai rodar
 
