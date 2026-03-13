@@ -25,7 +25,7 @@ BEGIN
    IF NOT EXISTS (
       SELECT FROM pg_catalog.pg_user WHERE usename = 'fsnext_user'
    ) THEN
-      CREATE USER fsnext_user WITH PASSWORD 'AdEL@I797';
+      CREATE USER fsnext_user WITH PASSWORD 'Lucas120908';
    END IF;
 
    IF NOT EXISTS (
@@ -57,7 +57,7 @@ sudo chown -R "$USER":"$USER" "$APP_DIR"
 cd "$APP_DIR"
 
 # Se quiser clonar o repo aqui, descomente e ajuste:
-# git clone https://github.com/JorgeWendell/fsnext .
+# git clone https://github.com/JorgeWendell/fsnext2 .
 # git checkout main
 
 # Se você já copiou os arquivos do projeto para $APP_DIR,
@@ -66,7 +66,7 @@ cd "$APP_DIR"
 # ====== ARQUIVO .env (usa a DATABASE_URL combinada) ======
 if [ ! -f .env ]; then
   cat <<EOF > .env
-DATABASE_URL="postgres://fsnext_user:Lucas%40120908@localhost:5432/fsnext"
+DATABASE_URL="postgres://fsnext_user:Lucas120908@localhost:5432/fsnext"
 EOF
   echo "Arquivo .env criado com DATABASE_URL padrão. Ajuste se necessário."
 else
