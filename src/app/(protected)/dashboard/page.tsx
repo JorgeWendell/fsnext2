@@ -1,3 +1,4 @@
+import { count, eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
@@ -10,8 +11,6 @@ import {
   PageHeaderContent,
   PageTitle,
 } from "@/components/ui/page-container";
-import { count, eq } from "drizzle-orm";
-
 import { db } from "@/db";
 import {
   alunosTable,

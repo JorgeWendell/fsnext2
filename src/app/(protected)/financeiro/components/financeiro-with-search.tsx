@@ -1,6 +1,6 @@
 "use client";
 import { Search } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { Input } from "@/components/ui/input";
 import {
@@ -34,14 +34,18 @@ const FinanceiroWithSearch = ({ alunos, escolas, finances, onRefresh }: Financei
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 15;
 
-  const getEscolaName = (escolaId: string) => {
-    const escola = escolas.find(e => e.id === escolaId);
-    return escola?.name || "Escola não encontrada";
-  };
+  const getEscolaName = useCallback(
+    (escolaId: string) => {
+      const escola = escolas.find((e) => e.id === escolaId);
+      return escola?.name || "Escola não encontrada";
+    },
+    [escolas]
+  );
 
-  const getEscolaByCodigo = (codigo: string) => {
-    return escolas.find(e => e.codigo === codigo);
-  };
+  const getEscolaByCodigo = useCallback(
+    (codigo: string) => escolas.find((e) => e.codigo === codigo),
+    [escolas]
+  );
 
   const getAlunoName = (alunoId: string) => {
     const aluno = alunos.find(a => a.id === alunoId);
@@ -86,7 +90,7 @@ const FinanceiroWithSearch = ({ alunos, escolas, finances, onRefresh }: Financei
         getEscolaByCodigo(searchTerm)?.id === aluno.escola
       );
     });
-  }, [alunos, searchTerm, escolas]);
+  }, [alunos, searchTerm, getEscolaName, getEscolaByCodigo]);
 
   useEffect(() => {
     setCurrentPage(1);
