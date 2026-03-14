@@ -1,6 +1,6 @@
 "use client";
 import { Search } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { Input } from "@/components/ui/input";
 import {
@@ -31,20 +31,20 @@ const EscolasWithSearch = ({ escolas, representantes }: EscolasWithSearchProps) 
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 15;
 
-  const filteredEscolas = escolas.filter((escola) => {
-    if (!searchTerm.trim()) {
-      return true;
-    }
-
-    const searchLower = searchTerm.toLowerCase().trim();
-
-    return (
-      escola.name.toLowerCase().includes(searchLower) ||
-      escola.codigo.toLowerCase().includes(searchLower) ||
-      (escola.phone || "").toLowerCase().includes(searchLower) ||
-      (escola.address || "").toLowerCase().includes(searchLower)
-    );
-  });
+  const filteredEscolas = useMemo(
+    () =>
+      escolas.filter((escola) => {
+        if (!searchTerm.trim()) return true;
+        const searchLower = searchTerm.toLowerCase().trim();
+        return (
+          escola.name.toLowerCase().includes(searchLower) ||
+          escola.codigo.toLowerCase().includes(searchLower) ||
+          (escola.phone || "").toLowerCase().includes(searchLower) ||
+          (escola.address || "").toLowerCase().includes(searchLower)
+        );
+      }),
+    [escolas, searchTerm]
+  );
 
   useEffect(() => {
     setCurrentPage(1);

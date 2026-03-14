@@ -43,7 +43,7 @@ const pwaConfig = withPWA({
       options: {
         cacheName: "offlineCache",
         expiration: {
-          maxEntries: 200,
+          maxEntries: 50,
         },
       },
     },

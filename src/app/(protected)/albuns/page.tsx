@@ -16,9 +16,12 @@ const AlbunsPage = async () => {
   let escolas: typeof escolasTable.$inferSelect[] = [];
 
   try {
-    escolas = await db.select().from(escolasTable);
-    const allAlunos = await db.query.alunosTable.findMany();
-         alunos = allAlunos.filter((a: typeof alunosTable.$inferSelect & { album?: boolean }) => a.album === true);
+    [escolas, alunos] = await Promise.all([
+      db.select().from(escolasTable),
+      db.query.alunosTable.findMany({
+        where: (aluno, { eq }) => eq(aluno.album, true),
+      }),
+    ]);
   } catch {
     alunos = [];
     escolas = [];

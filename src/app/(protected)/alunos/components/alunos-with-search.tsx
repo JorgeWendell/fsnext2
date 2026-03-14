@@ -2,7 +2,7 @@
 
 import { Search } from "lucide-react";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { Input } from "@/components/ui/input";
 import {
@@ -48,74 +48,73 @@ const AlunosWithSearch = ({ alunos, escolas }: AlunosWithSearchProps) => {
     return sex === "male" ? "Masculino" : "Feminino";
   };
 
-  const filteredAlunos = alunos.filter((aluno) => {
-    if (!searchTerm.trim()) {
-      return true;
-    }
-
-    const searchLower = searchTerm.toLowerCase().trim();
-
-    if (searchTerm.includes("/")) {
-      const parts = searchTerm.split("/");
-
-      if (parts.length === 2) {
-        const codigoAluno = parts[0].trim();
-        const codigoEscola = parts[1].trim();
-
-        const escolaEncontrada = getEscolaByCodigo(codigoEscola);
-
-        if (escolaEncontrada) {
-          return (
-            aluno.codigo === codigoAluno &&
-            aluno.escola === escolaEncontrada.id
-          );
+  const filteredAlunos = useMemo(() => {
+    return alunos.filter((aluno) => {
+      if (!searchTerm.trim()) return true;
+      const searchLower = searchTerm.toLowerCase().trim();
+      if (searchTerm.includes("/")) {
+        const parts = searchTerm.split("/");
+        if (parts.length === 2) {
+          const codigoAluno = parts[0].trim();
+          const codigoEscola = parts[1].trim();
+          const escolaEncontrada = getEscolaByCodigo(codigoEscola);
+          if (escolaEncontrada) {
+            return (
+              aluno.codigo === codigoAluno &&
+              aluno.escola === escolaEncontrada.id
+            );
+          }
+          return false;
         }
-
-        return false;
-      }
-
-      if (parts.length === 3) {
-        const codigoAluno = parts[0].trim();
-        const codigoEscola = parts[1].trim();
-        const anoSufixo = parts[2].trim();
-
-        const escolaEncontrada = getEscolaByCodigo(codigoEscola);
-
-        if (escolaEncontrada) {
-          return (
-            aluno.codigo === codigoAluno &&
-            aluno.escola === escolaEncontrada.id &&
-            aluno.ano_formacao.endsWith(anoSufixo)
-          );
+        if (parts.length === 3) {
+          const codigoAluno = parts[0].trim();
+          const codigoEscola = parts[1].trim();
+          const anoSufixo = parts[2].trim();
+          const escolaEncontrada = getEscolaByCodigo(codigoEscola);
+          if (escolaEncontrada) {
+            return (
+              aluno.codigo === codigoAluno &&
+              aluno.escola === escolaEncontrada.id &&
+              aluno.ano_formacao.endsWith(anoSufixo)
+            );
+          }
+          return false;
         }
-
-        return false;
       }
-    }
-
-    return (
-      aluno.name.toLowerCase().includes(searchLower) ||
-      aluno.codigo.toLowerCase().includes(searchLower) ||
-      aluno.class.toLowerCase().includes(searchLower) ||
-      (aluno.phone || "").toLowerCase().includes(searchLower) ||
-      (aluno.address || "").toLowerCase().includes(searchLower) ||
-      getEscolaName(aluno.escola).toLowerCase().includes(searchLower) ||
-      getEscolaByCodigo(searchTerm)?.id === aluno.escola ||
-      formatSex(aluno.sex).toLowerCase().includes(searchLower) ||
-      ((aluno as typeof alunosTable.$inferSelect & { album?: boolean })?.album ? "sim" : "não").includes(searchLower) ||
-      ((aluno as typeof alunosTable.$inferSelect & { colacao?: boolean })?.colacao ? "sim" : "não").includes(searchLower) ||
-      ((aluno as typeof alunosTable.$inferSelect & { baile?: boolean })?.baile ? "sim" : "não").includes(searchLower) ||
-      ((aluno as typeof alunosTable.$inferSelect & { convite_extra?: boolean })?.convite_extra ? "sim" : "não").includes(searchLower) ||
-      ((aluno as typeof alunosTable.$inferSelect & { valor_album?: string })?.valor_album || "").includes(searchLower) ||
-      ((aluno as typeof alunosTable.$inferSelect & { valor_colacao?: string })?.valor_colacao || "").includes(searchLower) ||
-      ((aluno as typeof alunosTable.$inferSelect & { valor_baile?: string })?.valor_baile || "").includes(searchLower) ||
-      ((aluno as typeof alunosTable.$inferSelect & { valor_convite_extra?: string })?.valor_convite_extra || "").includes(searchLower) ||
-      "álbum".includes(searchLower) ||
-      "colação".includes(searchLower) ||
-      "baile".includes(searchLower) ||
-      "convite extra".includes(searchLower)
-    );
-  });
+      const alunoExt = aluno as typeof alunosTable.$inferSelect & {
+        album?: boolean;
+        colacao?: boolean;
+        baile?: boolean;
+        convite_extra?: boolean;
+        valor_album?: string;
+        valor_colacao?: string;
+        valor_baile?: string;
+        valor_convite_extra?: string;
+      };
+      return (
+        aluno.name.toLowerCase().includes(searchLower) ||
+        aluno.codigo.toLowerCase().includes(searchLower) ||
+        aluno.class.toLowerCase().includes(searchLower) ||
+        (aluno.phone || "").toLowerCase().includes(searchLower) ||
+        (aluno.address || "").toLowerCase().includes(searchLower) ||
+        getEscolaName(aluno.escola).toLowerCase().includes(searchLower) ||
+        getEscolaByCodigo(searchTerm)?.id === aluno.escola ||
+        formatSex(aluno.sex).toLowerCase().includes(searchLower) ||
+        (alunoExt?.album ? "sim" : "não").includes(searchLower) ||
+        (alunoExt?.colacao ? "sim" : "não").includes(searchLower) ||
+        (alunoExt?.baile ? "sim" : "não").includes(searchLower) ||
+        (alunoExt?.convite_extra ? "sim" : "não").includes(searchLower) ||
+        (alunoExt?.valor_album || "").includes(searchLower) ||
+        (alunoExt?.valor_colacao || "").includes(searchLower) ||
+        (alunoExt?.valor_baile || "").includes(searchLower) ||
+        (alunoExt?.valor_convite_extra || "").includes(searchLower) ||
+        "álbum".includes(searchLower) ||
+        "colação".includes(searchLower) ||
+        "baile".includes(searchLower) ||
+        "convite extra".includes(searchLower)
+      );
+    });
+  }, [alunos, searchTerm, escolas]);
 
   useEffect(() => {
     setCurrentPage(1);

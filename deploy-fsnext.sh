@@ -87,12 +87,24 @@ npx drizzle-kit push
 npm run build
 
 # ====== PM2: INICIAR E CONFIGURAR NO BOOT ======
+# Servidor com 6GB RAM: limite em 2GB evita OOM e deixa margem para sistema/Postgres/Nginx
 export PORT=$APP_PORT
 
-pm2 start npm --name "fsnext" -- start
+export NODE_OPTIONS="--max-old-space-size=2048"
+
+pm2 start npm --name "fsnext" --max-memory-restart 2G -- start
 pm2 save
 
 sudo env "PATH=$PATH" pm2 startup systemd -u "$USER" --hp "$HOME"
+
+# Se o PM2 foi configurado como root (pm2-root.service), reinicia automaticamente se for morto (ex: OOM)
+PM2_SVC="pm2-$(whoami).service"
+if [ "$(whoami)" = "root" ]; then PM2_SVC="pm2-root.service"; fi
+if systemctl list-unit-files --full | grep -q "$PM2_SVC"; then
+  sudo mkdir -p "/etc/systemd/system/${PM2_SVC}.d"
+  echo -e "[Service]\nRestart=on-failure\nRestartSec=5" | sudo tee "/etc/systemd/system/${PM2_SVC}.d/override.conf" > /dev/null
+  sudo systemctl daemon-reload
+fi
 
 # ====== NGINX (REVERSE PROXY) ======
 sudo tee /etc/nginx/sites-available/fsnext > /dev/null <<EOF

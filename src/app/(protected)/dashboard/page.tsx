@@ -10,6 +10,8 @@ import {
   PageHeaderContent,
   PageTitle,
 } from "@/components/ui/page-container";
+import { count, eq } from "drizzle-orm";
+
 import { db } from "@/db";
 import {
   alunosTable,
@@ -24,6 +26,35 @@ import { RevenueChart } from "./components/revenue-chart";
 import { StatsCard } from "./components/stats-card";
 import { UpcomingPaymentsAlert } from "./components/upcoming-payments-alert";
 
+function getRevenueFromFinance(
+  finance: typeof financesTable.$inferSelect
+): number {
+  const valueTotal = parseFloat(finance.valueTotal || "0");
+  if (
+    (finance.method !== "bank_slip" && finance.method !== "creditparc") ||
+    !finance.bank_slip ||
+    !finance.parcelasPagas
+  ) {
+    return valueTotal;
+  }
+  try {
+    const parcelasPagas = JSON.parse(finance.parcelasPagas) as Record<
+      string,
+      boolean
+    >;
+    const totalParcelas = parseInt(finance.bank_slip, 10);
+    const parcelasPagasCount = Object.values(parcelasPagas).filter(
+      (pago) => pago === true
+    ).length;
+    if (totalParcelas > 0 && parcelasPagasCount > 0) {
+      return (valueTotal / totalParcelas) * parcelasPagasCount;
+    }
+  } catch {
+    return valueTotal;
+  }
+  return valueTotal;
+}
+
 const DashboardPage = async () => {
   const session = await auth.api.getSession({
     headers: await headers(),
@@ -32,50 +63,53 @@ const DashboardPage = async () => {
     redirect("/authentication");
   }
 
-  let alunos: typeof alunosTable.$inferSelect[] = [];
-  let escolas: typeof escolasTable.$inferSelect[] = [];
-  let representantes: typeof representantesTable.$inferSelect[] = [];
+  let alunosCount = 0;
+  let escolasCount = 0;
+  let representantesCount = 0;
+  let alunosComAlbum = 0;
+  let alunosComColacao = 0;
+  let alunosComBaile = 0;
   let finances: typeof financesTable.$inferSelect[] = [];
 
   try {
-    alunos = await db.query.alunosTable.findMany();
-    escolas = await db.select().from(escolasTable);
-    representantes = await db.select().from(representantesTable);
-    finances = await db.select().from(financesTable);
+    const [alunosCountRow, escolasCountRow, representantesCountRow, albumRow, colacaoRow, baileRow, financesData] =
+      await Promise.all([
+        db.select({ value: count() }).from(alunosTable).then((r) => r[0]),
+        db.select({ value: count() }).from(escolasTable).then((r) => r[0]),
+        db.select({ value: count() }).from(representantesTable).then((r) => r[0]),
+        db
+          .select({ value: count() })
+          .from(alunosTable)
+          .where(eq(alunosTable.album, true))
+          .then((r) => r[0]),
+        db
+          .select({ value: count() })
+          .from(alunosTable)
+          .where(eq(alunosTable.colacao, true))
+          .then((r) => r[0]),
+        db
+          .select({ value: count() })
+          .from(alunosTable)
+          .where(eq(alunosTable.baile, true))
+          .then((r) => r[0]),
+        db.select().from(financesTable),
+      ]);
+
+    alunosCount = Number(alunosCountRow?.value ?? 0);
+    escolasCount = Number(escolasCountRow?.value ?? 0);
+    representantesCount = Number(representantesCountRow?.value ?? 0);
+    alunosComAlbum = Number(albumRow?.value ?? 0);
+    alunosComColacao = Number(colacaoRow?.value ?? 0);
+    alunosComBaile = Number(baileRow?.value ?? 0);
+    finances = financesData;
   } catch (error) {
     console.error("Erro ao buscar dados:", error);
   }
 
-  const totalRevenue = finances.reduce((acc, finance) => {
-    const valueTotal = parseFloat(finance.valueTotal || "0");
-    
-    if (
-      (finance.method === "bank_slip" || finance.method === "creditparc") &&
-      finance.bank_slip &&
-      finance.parcelasPagas
-    ) {
-      try {
-        const parcelasPagas = JSON.parse(finance.parcelasPagas);
-        const totalParcelas = parseInt(finance.bank_slip, 10);
-        const parcelasPagasCount = Object.values(parcelasPagas).filter(
-          (pago) => pago === true
-        ).length;
-        
-        if (totalParcelas > 0 && parcelasPagasCount > 0) {
-          const valorPorParcela = valueTotal / totalParcelas;
-          return acc + valorPorParcela * parcelasPagasCount;
-        }
-      } catch (error) {
-        console.error("Erro ao processar parcelas pagas:", error);
-      }
-    }
-    
-    return acc + valueTotal;
-  }, 0);
-
-  const alunosComAlbum = alunos.filter((aluno) => aluno.album).length;
-  const alunosComColacao = alunos.filter((aluno) => aluno.colacao).length;
-  const alunosComBaile = alunos.filter((aluno) => aluno.baile).length;
+  const totalRevenue = finances.reduce(
+    (acc, finance) => acc + getRevenueFromFinance(finance),
+    0
+  );
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("pt-BR", {
@@ -86,38 +120,13 @@ const DashboardPage = async () => {
 
   const calculateRevenueByMonth = () => {
     const monthMap = new Map<string, number>();
-    
     finances.forEach((finance) => {
       const date = new Date(finance.createdAt);
       const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-      
-      let revenue = parseFloat(finance.valueTotal || "0");
-      
-      if (
-        (finance.method === "bank_slip" || finance.method === "creditparc") &&
-        finance.bank_slip &&
-        finance.parcelasPagas
-      ) {
-        try {
-          const parcelasPagas = JSON.parse(finance.parcelasPagas);
-          const totalParcelas = parseInt(finance.bank_slip, 10);
-          const parcelasPagasCount = Object.values(parcelasPagas).filter(
-            (pago) => pago === true
-          ).length;
-          
-          if (totalParcelas > 0 && parcelasPagasCount > 0) {
-            const valorPorParcela = revenue / totalParcelas;
-            revenue = valorPorParcela * parcelasPagasCount;
-          }
-        } catch (error) {
-          console.error("Erro ao processar parcelas pagas:", error);
-        }
-      }
-      
+      const revenue = getRevenueFromFinance(finance);
       const current = monthMap.get(monthKey) || 0;
       monthMap.set(monthKey, current + revenue);
     });
-    
     return Array.from(monthMap.entries())
       .map(([key, revenue]) => {
         const [year, month] = key.split("-");
@@ -137,7 +146,6 @@ const DashboardPage = async () => {
 
   const calculateRevenueByMethod = () => {
     const methodMap = new Map<string, number>();
-    
     const methodNames: Record<string, string> = {
       pix: "PIX",
       debit: "Débito",
@@ -145,36 +153,12 @@ const DashboardPage = async () => {
       creditparc: "Crédito Parcelado",
       bank_slip: "Boleto",
     };
-    
     finances.forEach((finance) => {
-      let revenue = parseFloat(finance.valueTotal || "0");
-      
-      if (
-        (finance.method === "bank_slip" || finance.method === "creditparc") &&
-        finance.bank_slip &&
-        finance.parcelasPagas
-      ) {
-        try {
-          const parcelasPagas = JSON.parse(finance.parcelasPagas);
-          const totalParcelas = parseInt(finance.bank_slip, 10);
-          const parcelasPagasCount = Object.values(parcelasPagas).filter(
-            (pago) => pago === true
-          ).length;
-          
-          if (totalParcelas > 0 && parcelasPagasCount > 0) {
-            const valorPorParcela = revenue / totalParcelas;
-            revenue = valorPorParcela * parcelasPagasCount;
-          }
-        } catch (error) {
-          console.error("Erro ao processar parcelas pagas:", error);
-        }
-      }
-      
+      const revenue = getRevenueFromFinance(finance);
       const methodName = methodNames[finance.method] || finance.method;
       const current = methodMap.get(methodName) || 0;
       methodMap.set(methodName, current + revenue);
     });
-    
     return Array.from(methodMap.entries())
       .map(([name, value]) => ({
         name,
@@ -202,21 +186,21 @@ const DashboardPage = async () => {
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 mt-6">
           <StatsCard
             title="Total de Alunos"
-            value={alunos.length}
+            value={alunosCount}
             description="Alunos cadastrados no sistema"
             iconName="GraduationCap"
             gradient="from-blue-500/10 to-cyan-500/10"
           />
           <StatsCard
             title="Total de Escolas"
-            value={escolas.length}
+            value={escolasCount}
             description="Escolas parceiras"
             iconName="School"
             gradient="from-purple-500/10 to-pink-500/10"
           />
           <StatsCard
             title="Representantes"
-            value={representantes.length}
+            value={representantesCount}
             description="Representantes ativos"
             iconName="UserPen"
             gradient="from-green-500/10 to-emerald-500/10"
@@ -234,21 +218,21 @@ const DashboardPage = async () => {
           <StatsCard
             title="Alunos com Álbum"
             value={alunosComAlbum}
-            description={`${((alunosComAlbum / alunos.length) * 100 || 0).toFixed(1)}% do total`}
+            description={`${((alunosComAlbum / alunosCount) * 100 || 0).toFixed(1)}% do total`}
             iconName="BookImage"
             gradient="from-indigo-500/10 to-blue-500/10"
           />
           <StatsCard
             title="Alunos com Colação"
             value={alunosComColacao}
-            description={`${((alunosComColacao / alunos.length) * 100 || 0).toFixed(1)}% do total`}
+            description={`${((alunosComColacao / alunosCount) * 100 || 0).toFixed(1)}% do total`}
             iconName="TrendingUp"
             gradient="from-teal-500/10 to-cyan-500/10"
           />
           <StatsCard
             title="Alunos com Baile"
             value={alunosComBaile}
-            description={`${((alunosComBaile / alunos.length) * 100 || 0).toFixed(1)}% do total`}
+            description={`${((alunosComBaile / alunosCount) * 100 || 0).toFixed(1)}% do total`}
             iconName="TrendingUp"
             gradient="from-rose-500/10 to-pink-500/10"
           />

@@ -1,6 +1,6 @@
 "use client";
 import { Search } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { Input } from "@/components/ui/input";
 import {
@@ -25,18 +25,18 @@ const RepresentantesWithSearch = ({ representantes }: RepresentantesWithSearchPr
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 15;
 
-  const filteredRepresentantes = representantes.filter((representante) => {
-    if (!searchTerm.trim()) {
-      return true;
-    }
-
-    const searchLower = searchTerm.toLowerCase().trim();
-
-    return (
-      representante.name.toLowerCase().includes(searchLower) ||
-      (representante.phone || "").toLowerCase().includes(searchLower)
-    );
-  });
+  const filteredRepresentantes = useMemo(
+    () =>
+      representantes.filter((representante) => {
+        if (!searchTerm.trim()) return true;
+        const searchLower = searchTerm.toLowerCase().trim();
+        return (
+          representante.name.toLowerCase().includes(searchLower) ||
+          (representante.phone || "").toLowerCase().includes(searchLower)
+        );
+      }),
+    [representantes, searchTerm]
+  );
 
   useEffect(() => {
     setCurrentPage(1);

@@ -1,6 +1,6 @@
 "use client";
 import { Search } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { Input } from "@/components/ui/input";
 import {
@@ -59,40 +59,34 @@ const FinanceiroWithSearch = ({ alunos, escolas, finances, onRefresh }: Financei
     return getEscolaName(aluno.escola);
   };
 
-  const filteredAlunos = alunos.filter((aluno) => {
-    if (!searchTerm.trim()) {
-      return true;
-    }
-
-    const searchLower = searchTerm.toLowerCase().trim();
-
-    if (searchTerm.includes("/")) {
-      const parts = searchTerm.split("/");
-      if (parts.length === 2) {
-        const codigoAluno = parts[0].trim();
-        const codigoEscola = parts[1].trim();
-
-        const escolaEncontrada = getEscolaByCodigo(codigoEscola);
-
-        if (escolaEncontrada) {
-          return (
-            aluno.codigo === codigoAluno &&
-            aluno.escola === escolaEncontrada.id
-          );
+  const filteredAlunos = useMemo(() => {
+    return alunos.filter((aluno) => {
+      if (!searchTerm.trim()) return true;
+      const searchLower = searchTerm.toLowerCase().trim();
+      if (searchTerm.includes("/")) {
+        const parts = searchTerm.split("/");
+        if (parts.length === 2) {
+          const codigoAluno = parts[0].trim();
+          const codigoEscola = parts[1].trim();
+          const escolaEncontrada = getEscolaByCodigo(codigoEscola);
+          if (escolaEncontrada) {
+            return (
+              aluno.codigo === codigoAluno &&
+              aluno.escola === escolaEncontrada.id
+            );
+          }
+          return false;
         }
-
-        return false;
       }
-    }
-
-    return (
-      aluno.name.toLowerCase().includes(searchLower) ||
-      aluno.codigo.toLowerCase().includes(searchLower) ||
-      aluno.class.toLowerCase().includes(searchLower) ||
-      getEscolaName(aluno.escola).toLowerCase().includes(searchLower) ||
-      getEscolaByCodigo(searchTerm)?.id === aluno.escola
-    );
-  });
+      return (
+        aluno.name.toLowerCase().includes(searchLower) ||
+        aluno.codigo.toLowerCase().includes(searchLower) ||
+        aluno.class.toLowerCase().includes(searchLower) ||
+        getEscolaName(aluno.escola).toLowerCase().includes(searchLower) ||
+        getEscolaByCodigo(searchTerm)?.id === aluno.escola
+      );
+    });
+  }, [alunos, searchTerm, escolas]);
 
   useEffect(() => {
     setCurrentPage(1);

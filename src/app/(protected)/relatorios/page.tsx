@@ -17,9 +17,11 @@ const ReportsPage = async () => {
   let finances: typeof financesTable.$inferSelect[] = [];
 
   try {
-    escolas = await db.select().from(escolasTable);
-    alunos = await db.query.alunosTable.findMany();
-    finances = await db.select().from(financesTable);
+    [escolas, alunos, finances] = await Promise.all([
+      db.select().from(escolasTable),
+      db.query.alunosTable.findMany(),
+      db.select().from(financesTable),
+    ]);
   } catch {
     alunos = [];
     escolas = [];

@@ -27,42 +27,19 @@ const AlunosPage = async () => {
 
   let alunos: typeof alunosTable.$inferSelect[] = [];
   let escolas: typeof escolasTable.$inferSelect[] = [];
-  
-  try {
-    // Verificar se a conexão está funcionando
-    console.log("Testando conexão com banco...");
-    console.log("DATABASE_URL existe:", !!process.env.DATABASE_URL);
-    
-    // Teste simples primeiro
-    escolas = await db.select().from(escolasTable);
-    
-    
-    if (!escolas || escolas.length === 0) {
-      console.log("Nenhuma escola encontrada no banco");
-      escolas = [];
-    } else {
-      console.log("Escolas encontradas:", escolas.length);
-    }
-    
-    alunos = await db.query.alunosTable.findMany();
-    escolas = await db.select().from(escolasTable);
 
-    
-    
-        // Garantir que escolas seja sempre um array
-    if (!Array.isArray(escolas)) {
-      console.log("Escolas não é um array, convertendo...");
-      escolas = [];
-    }
+  try {
+    [alunos, escolas] = await Promise.all([
+      db.query.alunosTable.findMany(),
+      db.select().from(escolasTable),
+    ]);
+    if (!Array.isArray(escolas)) escolas = [];
   } catch (error) {
     console.error("Erro ao buscar dados:", error);
-    escolas = [];
     alunos = [];
+    escolas = [];
   }
 
-
-  
-  // Garantir que escolas seja sempre um array válido
   const escolasArray = Array.isArray(escolas) ? escolas : [];
  
   

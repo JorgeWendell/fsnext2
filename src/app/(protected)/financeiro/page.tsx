@@ -28,21 +28,14 @@ const FinanceiroPage = async () => {
   let finances: typeof financesTable.$inferSelect[] = [];
   
   try {
-    // Buscar dados do banco
-    escolas = await db.select().from(escolasTable);
-    alunos = await db.query.alunosTable.findMany();
-    finances = await db.select().from(financesTable);
-    
-    // Garantir que os arrays sejam válidos
-    if (!Array.isArray(escolas)) {
-      escolas = [];
-    }
-    if (!Array.isArray(alunos)) {
-      alunos = [];
-    }
-    if (!Array.isArray(finances)) {
-      finances = [];
-    }
+    [escolas, alunos, finances] = await Promise.all([
+      db.select().from(escolasTable),
+      db.query.alunosTable.findMany(),
+      db.select().from(financesTable),
+    ]);
+    if (!Array.isArray(escolas)) escolas = [];
+    if (!Array.isArray(alunos)) alunos = [];
+    if (!Array.isArray(finances)) finances = [];
   } catch (error) {
     console.error("Erro ao buscar dados:", error);
     escolas = [];
