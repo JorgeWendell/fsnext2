@@ -12,7 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { alunosTable, financesTable } from "@/db/schema";
+import { alunoExtrasTable, alunosTable, financesTable } from "@/db/schema";
 
 import ReportDialog from "./report-dialog";
 
@@ -26,9 +26,10 @@ interface Props {
   alunos: (typeof alunosTable.$inferSelect)[];
   escolas: Escola[];
   finances: (typeof financesTable.$inferSelect)[];
+  extras: (typeof alunoExtrasTable.$inferSelect)[];
 }
 
-const ReportsTable = ({ alunos, escolas, finances }: Props) => {
+const ReportsTable = ({ alunos, escolas, finances, extras }: Props) => {
   const [selectedAluno, setSelectedAluno] = useState<
     typeof alunosTable.$inferSelect | null
   >(null);
@@ -63,6 +64,7 @@ const ReportsTable = ({ alunos, escolas, finances }: Props) => {
             const alunoFinances = finances.filter(
               (f) => f.alunoId === aluno.id
             );
+            const alunoExtras = extras.filter((e) => e.alunoId === aluno.id);
             return (
               <TableRow key={aluno.id}>
                 <TableCell>
@@ -90,6 +92,7 @@ const ReportsTable = ({ alunos, escolas, finances }: Props) => {
                           aluno={selectedAluno}
                           finances={alunoFinances}
                           escolas={escolas}
+                          extras={alunoExtras}
                         />
                       )}
                     </Dialog>

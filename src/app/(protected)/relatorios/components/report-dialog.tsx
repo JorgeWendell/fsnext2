@@ -19,7 +19,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { alunosTable, financesTable } from "@/db/schema";
+import { alunoExtrasTable, alunosTable, financesTable } from "@/db/schema";
 
 interface Escola {
   id: string;
@@ -31,6 +31,7 @@ interface Props {
   aluno: typeof alunosTable.$inferSelect;
   finances: (typeof financesTable.$inferSelect)[];
   escolas: Escola[];
+  extras: (typeof alunoExtrasTable.$inferSelect)[];
 }
 
 const currency = (v: string | number) =>
@@ -49,7 +50,7 @@ const getPaymentMethodName = (method: string) => {
   return methodNames[method as keyof typeof methodNames] || method;
 };
 
-const ReportDialog = ({ aluno, finances, escolas }: Props) => {
+const ReportDialog = ({ aluno, finances, escolas, extras }: Props) => {
   // Calcular total dos itens financeiros do aluno
   const valorAlbum = parseFloat(aluno.valor_album || "0");
   const valorColacao = parseFloat(aluno.valor_colacao || "0");
@@ -58,8 +59,9 @@ const ReportDialog = ({ aluno, finances, escolas }: Props) => {
 
   const totalItensAluno =
     valorAlbum + valorColacao + valorBaile + valorConviteExtra;
-  // totalPagamentos removed as it's not being used
   const escolaName = escolas.find((e) => e.id === aluno.escola)?.name ?? "-";
+
+  const alunoExtras = extras.filter((e) => e.alunoId === aluno.id);
 
   const handlePdf = () => {
     const doc = new jsPDF("landscape");
@@ -209,13 +211,21 @@ const ReportDialog = ({ aluno, finances, escolas }: Props) => {
     doc.setFont("helvetica", "normal");
     currentY += 8;
 
-    const itensAdquiridos = [];
+    const itensAdquiridos: string[] = [];
     if (aluno.album) itensAdquiridos.push(`Álbum: ${currency(valorAlbum)}`);
     if (aluno.colacao)
       itensAdquiridos.push(`Colação: ${currency(valorColacao)}`);
     if (aluno.baile) itensAdquiridos.push(`Baile: ${currency(valorBaile)}`);
     if (aluno.convite_extra)
       itensAdquiridos.push(`Convite Extra: ${currency(valorConviteExtra)}`);
+
+    alunoExtras.forEach((extra) => {
+      const label =
+        extra.type === "album" ? "Álbum extra" : "Convite extra";
+      const valor = currency(extra.total);
+      const status = extra.paid ? " (Pago)" : "";
+      itensAdquiridos.push(`${label}: ${valor}${status}`);
+    });
 
     if (itensAdquiridos.length > 0) {
       itensAdquiridos.forEach((item, index) => {
@@ -323,6 +333,29 @@ const ReportDialog = ({ aluno, finances, escolas }: Props) => {
             </div>
           </div>
         </div>
+        {alunoExtras.length > 0 && (
+          <div className="mt-4">
+            <h4 className="text-md font-semibold mb-2">Itens extras</h4>
+            <div className="space-y-2">
+              {alunoExtras.map((extra) => (
+                <div
+                  key={extra.id}
+                  className="flex items-center justify-between rounded-lg border p-2"
+                >
+                  <div>
+                    <div className="font-medium">
+                      {extra.type === "album" ? "Álbum extra" : "Convite extra"}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {currency(extra.total)}
+                      {extra.paid ? " (Pago)" : " (Em aberto)"}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="mb-4">

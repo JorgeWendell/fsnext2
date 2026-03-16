@@ -15,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { alunosTable, financesTable } from "@/db/schema";
+import { alunoExtrasTable, alunosTable, financesTable } from "@/db/schema";
 
 import ReportsTable from "./reports-table";
 
@@ -25,6 +25,7 @@ interface Props {
   alunos: (typeof alunosTable.$inferSelect)[];
   escolas: Escola[];
   finances: (typeof financesTable.$inferSelect)[];
+  extras: (typeof alunoExtrasTable.$inferSelect)[];
 }
 
 const currency = (v: string | number) =>
@@ -32,7 +33,7 @@ const currency = (v: string | number) =>
     typeof v === "string" ? parseFloat(v || "0") : v
   );
 
-const ReportsWithSearch = ({ alunos, escolas, finances }: Props) => {
+const ReportsWithSearch = ({ alunos, escolas, finances, extras }: Props) => {
   const [term, setTerm] = useState("");
   const [schoolId, setSchoolId] = useState<string>("");
   const [selectedClass, setSelectedClass] = useState<string>("");
@@ -510,6 +511,7 @@ const ReportsWithSearch = ({ alunos, escolas, finances }: Props) => {
         alunos={filteredAlunos}
         escolas={escolas}
         finances={finances}
+        extras={extras}
       />
     </div>
   );

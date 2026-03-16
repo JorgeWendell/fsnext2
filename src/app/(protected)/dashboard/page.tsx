@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/page-container";
 import { db } from "@/db";
 import {
+  alunoExtrasTable,
   alunosTable,
   escolasTable,
   financesTable,
@@ -69,9 +70,19 @@ const DashboardPage = async () => {
   let alunosComColacao = 0;
   let alunosComBaile = 0;
   let finances: typeof financesTable.$inferSelect[] = [];
+  let extras: typeof alunoExtrasTable.$inferSelect[] = [];
 
   try {
-    const [alunosCountRow, escolasCountRow, representantesCountRow, albumRow, colacaoRow, baileRow, financesData] =
+    const [
+      alunosCountRow,
+      escolasCountRow,
+      representantesCountRow,
+      albumRow,
+      colacaoRow,
+      baileRow,
+      financesData,
+      extrasData,
+    ] =
       await Promise.all([
         db.select({ value: count() }).from(alunosTable).then((r) => r[0]),
         db.select({ value: count() }).from(escolasTable).then((r) => r[0]),
@@ -92,6 +103,10 @@ const DashboardPage = async () => {
           .where(eq(alunosTable.baile, true))
           .then((r) => r[0]),
         db.select().from(financesTable),
+        db
+          .select()
+          .from(alunoExtrasTable)
+          .where(eq(alunoExtrasTable.paid, true)),
       ]);
 
     alunosCount = Number(alunosCountRow?.value ?? 0);
@@ -101,6 +116,7 @@ const DashboardPage = async () => {
     alunosComColacao = Number(colacaoRow?.value ?? 0);
     alunosComBaile = Number(baileRow?.value ?? 0);
     finances = financesData;
+    extras = extrasData;
   } catch (error) {
     console.error("Erro ao buscar dados:", error);
   }
@@ -109,6 +125,12 @@ const DashboardPage = async () => {
     (acc, finance) => acc + getRevenueFromFinance(finance),
     0
   );
+
+  const totalExtrasPaid = extras.reduce((acc, extra) => {
+    const value = parseFloat(extra.total || "0");
+    if (Number.isNaN(value)) return acc;
+    return acc + value;
+  }, 0);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("pt-BR", {
@@ -236,9 +258,9 @@ const DashboardPage = async () => {
             gradient="from-rose-500/10 to-pink-500/10"
           />
           <StatsCard
-            title="Transações"
-            value={finances.length}
-            description="Total de pagamentos registrados"
+            title="Valor de Itens Extras"
+            value={formatCurrency(totalExtrasPaid)}
+            description="Total pago em extras"
             iconName="CircleDollarSign"
             gradient="from-amber-500/10 to-orange-500/10"
           />
