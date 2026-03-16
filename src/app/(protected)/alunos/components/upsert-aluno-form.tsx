@@ -7,7 +7,19 @@ import { PatternFormat } from "react-number-format";
 import { toast } from "sonner";
 import z from "zod";
 
+import { addAlunoExtra } from "@/actions/add-aluno-extra";
 import { upsertAluno } from "@/actions/upsert-aluno";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -57,10 +69,9 @@ const formSchema = z
       .string()
       .trim()
       .optional()
-      .refine(
-        (val) => !val || validatePhone(val),
-        { message: "Telefone inválido" }
-      ),
+      .refine((val) => !val || validatePhone(val), {
+        message: "Telefone inválido",
+      }),
     sex: z.enum(["male", "female"], { message: "Sexo é obrigatório" }),
     escola: z.string().trim().min(1, { message: "Escola é obrigatória" }),
     album: z.boolean().optional(),
@@ -79,7 +90,7 @@ const formSchema = z
       }
       return true;
     },
-    { path: ["valor_album"], message: "Informe o valor do álbum" }
+    { path: ["valor_album"], message: "Informe o valor do álbum" },
   )
   .refine(
     (data) => {
@@ -88,7 +99,7 @@ const formSchema = z
       }
       return true;
     },
-    { path: ["valor_colacao"], message: "Informe o valor da colação" }
+    { path: ["valor_colacao"], message: "Informe o valor da colação" },
   )
   .refine(
     (data) => {
@@ -97,7 +108,7 @@ const formSchema = z
       }
       return true;
     },
-    { path: ["valor_baile"], message: "Informe o valor do baile" }
+    { path: ["valor_baile"], message: "Informe o valor do baile" },
   )
   .refine(
     (data) => {
@@ -111,7 +122,7 @@ const formSchema = z
     {
       path: ["valor_convite_extra"],
       message: "Informe o valor do convite extra",
-    }
+    },
   );
 
 type FormSchema = z.infer<typeof formSchema>;
@@ -125,7 +136,6 @@ interface UpsertAlunoFormProps {
   aluno?: typeof alunosTable.$inferSelect;
   onSuccess?: () => void;
   escolas: Escola[];
-  alunos?: typeof alunosTable.$inferSelect[];
   financeOpenByDefault?: boolean;
 }
 
@@ -133,13 +143,16 @@ const UpsertAlunoForm = ({
   aluno,
   onSuccess,
   escolas = [],
-  alunos: allAlunos = [],
   financeOpenByDefault = false,
 }: UpsertAlunoFormProps) => {
   const [isFinanceOpen, setIsFinanceOpen] =
     React.useState<boolean>(financeOpenByDefault);
+  const [isExtrasOpen, setIsExtrasOpen] = React.useState(false);
+  const [extraAlbum, setExtraAlbum] = React.useState(false);
+  const [extraConvite, setExtraConvite] = React.useState(false);
+  const [extraValue, setExtraValue] = React.useState("");
   const isEditing = !!aluno;
-  
+
   const form = useForm<FormSchema>({
     shouldUnregister: true,
     resolver: zodResolver(formSchema),
@@ -163,34 +176,6 @@ const UpsertAlunoForm = ({
     },
   });
 
-  const generateNextCodigo = React.useCallback((escolaId: string) => {
-    if (!escolaId || isEditing) return;
-
-    const alunosDaEscola = allAlunos.filter(
-      (a) => a.escola === escolaId
-    );
-
-    const codigosExistentes = alunosDaEscola
-      .map((a) => parseInt(a.codigo, 10))
-      .filter((codigo) => !isNaN(codigo))
-      .sort((a, b) => b - a);
-
-    const proximoCodigo = codigosExistentes.length > 0
-      ? codigosExistentes[0] + 1
-      : 1;
-
-    const codigoFormatado = proximoCodigo.toString().padStart(3, "0");
-    form.setValue("codigo", codigoFormatado);
-  }, [allAlunos, isEditing, form]);
-
-  const escolaSelecionada = form.watch("escola");
-
-  React.useEffect(() => {
-    if (escolaSelecionada && !isEditing) {
-      generateNextCodigo(escolaSelecionada);
-    }
-  }, [escolaSelecionada, isEditing, generateNextCodigo]);
-
   const upsertAlunoAction = useAction(upsertAluno, {
     onSuccess: () => {
       toast.success("Aluno adicionado com sucesso");
@@ -203,6 +188,19 @@ const UpsertAlunoForm = ({
     },
   });
 
+  const addAlunoExtraAction = useAction(addAlunoExtra, {
+    onSuccess: () => {
+      toast.success("Item extra salvo com sucesso");
+      setExtraAlbum(false);
+      setExtraConvite(false);
+      setExtraValue("");
+      setIsExtrasOpen(false);
+    },
+    onError: () => {
+      toast.error("Erro ao salvar item extra");
+    },
+  });
+
   const formatCurrency = (value: string) => {
     const onlyDigits = (value || "").replace(/\D/g, "");
     const cents = parseInt(onlyDigits || "0", 10);
@@ -212,6 +210,18 @@ const UpsertAlunoForm = ({
       currency: "BRL",
       minimumFractionDigits: 2,
     }).format(reais);
+  };
+
+  const handleExtraValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value;
+    const onlyDigits = raw.replace(/\D/g, "");
+    if (!onlyDigits) {
+      setExtraValue("");
+      return;
+    }
+    const cents = parseInt(onlyDigits, 10);
+    const asNumberString = (cents / 100).toFixed(2);
+    setExtraValue(asNumberString);
   };
 
   const handleAlbumValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -251,7 +261,7 @@ const UpsertAlunoForm = ({
   };
 
   const handleConviteExtraValueChange = (
-    e: React.ChangeEvent<HTMLInputElement>
+    e: React.ChangeEvent<HTMLInputElement>,
   ) => {
     const raw = e.target.value;
     const onlyDigits = raw.replace(/\D/g, "");
@@ -289,19 +299,20 @@ const UpsertAlunoForm = ({
                 <FormItem>
                   <FormLabel>Código</FormLabel>
                   <FormControl>
-                    <Input 
-                      placeholder="Código" 
-                      maxLength={3} 
+                    <Input
+                      placeholder="Código"
+                      maxLength={3}
                       readOnly={isEditing}
                       disabled={isEditing}
                       className={isEditing ? "bg-muted cursor-not-allowed" : ""}
-                      {...field} 
+                      {...field}
                     />
                   </FormControl>
                   <FormMessage />
                   {!isEditing && (
                     <p className="text-xs text-muted-foreground">
-                      Código gerado automaticamente
+                      Informe um código de 3 dígitos. Após salvar, não poderá
+                      ser alterado.
                     </p>
                   )}
                   {isEditing && (
@@ -420,15 +431,7 @@ const UpsertAlunoForm = ({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Escola</FormLabel>
-                  <Select
-                    onValueChange={(value) => {
-                      field.onChange(value);
-                      if (!isEditing) {
-                        generateNextCodigo(value);
-                      }
-                    }}
-                    value={field.value}
-                  >
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <SelectTrigger>
                       <SelectValue placeholder="Escola" />
                     </SelectTrigger>
@@ -455,202 +458,345 @@ const UpsertAlunoForm = ({
             />
           </div>
 
-          <DialogFooter className="flex-col sm:flex-row gap-2">
-            <Dialog open={isFinanceOpen} onOpenChange={setIsFinanceOpen}>
-              <DialogTrigger asChild>
-                <Button type="button" variant="outline" className="w-full sm:w-auto">
-                  Finanças
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Finanças do Aluno</DialogTitle>
-                  <DialogDescription>
-                    Marque os itens e informe os valores.
-                  </DialogDescription>
-                </DialogHeader>
-
-                <div className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="album"
-                    render={({ field }) => (
-                      <FormItem className="flex items-center space-x-2">
-                        <FormControl>
-                          <input
-                            type="checkbox"
-                            checked={Boolean(field.value)}
-                            onChange={(e) => field.onChange(e.target.checked)}
-                            className="h-4 w-4 rounded border"
-                          />
-                        </FormControl>
-                        <FormLabel className="!mt-0">Álbum</FormLabel>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {form.watch("album") && (
-                    <FormField
-                      control={form.control}
-                      name="valor_album"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Valor do Álbum</FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="R$ 0,00"
-                              value={
-                                field.value ? formatCurrency(field.value) : ""
-                              }
-                              onChange={handleAlbumValueChange}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  )}
-
-                  <FormField
-                    control={form.control}
-                    name="colacao"
-                    render={({ field }) => (
-                      <FormItem className="flex items-center space-x-2">
-                        <FormControl>
-                          <input
-                            type="checkbox"
-                            checked={Boolean(field.value)}
-                            onChange={(e) => field.onChange(e.target.checked)}
-                            className="h-4 w-4 rounded border"
-                          />
-                        </FormControl>
-                        <FormLabel className="!mt-0">Colação</FormLabel>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {form.watch("colacao") && (
-                    <FormField
-                      control={form.control}
-                      name="valor_colacao"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Valor da Colação</FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="R$ 0,00"
-                              value={
-                                field.value ? formatCurrency(field.value) : ""
-                              }
-                              onChange={handleColacaoValueChange}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  )}
-
-                  <FormField
-                    control={form.control}
-                    name="baile"
-                    render={({ field }) => (
-                      <FormItem className="flex items-center space-x-2">
-                        <FormControl>
-                          <input
-                            type="checkbox"
-                            checked={Boolean(field.value)}
-                            onChange={(e) => field.onChange(e.target.checked)}
-                            className="h-4 w-4 rounded border"
-                          />
-                        </FormControl>
-                        <FormLabel className="!mt-0">Baile</FormLabel>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {form.watch("baile") && (
-                    <FormField
-                      control={form.control}
-                      name="valor_baile"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Valor do Baile</FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="R$ 0,00"
-                              value={
-                                field.value ? formatCurrency(field.value) : ""
-                              }
-                              onChange={handleBaileValueChange}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  )}
-
-                  <FormField
-                    control={form.control}
-                    name="convite_extra"
-                    render={({ field }) => (
-                      <FormItem className="flex items-center space-x-2">
-                        <FormControl>
-                          <input
-                            type="checkbox"
-                            checked={Boolean(field.value)}
-                            onChange={(e) => field.onChange(e.target.checked)}
-                            className="h-4 w-4 rounded border"
-                          />
-                        </FormControl>
-                        <FormLabel className="!mt-0">Convite Extra</FormLabel>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {form.watch("convite_extra") && (
-                    <FormField
-                      control={form.control}
-                      name="valor_convite_extra"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Valor do Convite Extra</FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="R$ 0,00"
-                              value={
-                                field.value ? formatCurrency(field.value) : ""
-                              }
-                              onChange={handleConviteExtraValueChange}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  )}
-
-                  <DialogFooter>
+          <DialogFooter className="flex-col gap-2">
+            <div className="flex w-full items-center justify-between gap-2">
+              {isEditing && aluno && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
                     <Button
                       type="button"
-                      onClick={form.handleSubmit(onSubmit)}
+                      variant="destructive"
+                      className="w-full sm:w-32"
                       disabled={upsertAlunoAction.isPending}
                     >
-                      {upsertAlunoAction.isPending
-                        ? "Salvando..."
-                        : "Salvar Finanças"}
+                      Desativar
                     </Button>
-                  </DialogFooter>
-                </div>
-              </DialogContent>
-            </Dialog>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Desativar contrato</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Você está prestes a desativar esse contrato, tem certeza disso?
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => {
+                          const currentValues = form.getValues();
+                          upsertAlunoAction.execute({
+                            ...currentValues,
+                            id: aluno.id,
+                            active: false,
+                          });
+                        }}
+                      >
+                        Sim, desativar
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
 
-            <Button type="submit" disabled={upsertAlunoAction.isPending} className="w-full sm:w-auto">
+              <Dialog open={isFinanceOpen} onOpenChange={setIsFinanceOpen}>
+                <DialogTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full sm:w-auto"
+                  >
+                    Finanças
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Finanças do Aluno</DialogTitle>
+                    <DialogDescription>
+                      Marque os itens e informe os valores.
+                    </DialogDescription>
+                  </DialogHeader>
+
+                  <div className="space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="album"
+                      render={({ field }) => (
+                        <FormItem className="flex items-center space-x-2">
+                          <FormControl>
+                            <input
+                              type="checkbox"
+                              checked={Boolean(field.value)}
+                              onChange={(e) => field.onChange(e.target.checked)}
+                              className="h-4 w-4 rounded border"
+                            />
+                          </FormControl>
+                          <FormLabel className="!mt-0">Álbum</FormLabel>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {form.watch("album") && (
+                      <FormField
+                        control={form.control}
+                        name="valor_album"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Valor do Álbum</FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="R$ 0,00"
+                                value={
+                                  field.value ? formatCurrency(field.value) : ""
+                                }
+                                onChange={handleAlbumValueChange}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    )}
+
+                    <FormField
+                      control={form.control}
+                      name="colacao"
+                      render={({ field }) => (
+                        <FormItem className="flex items-center space-x-2">
+                          <FormControl>
+                            <input
+                              type="checkbox"
+                              checked={Boolean(field.value)}
+                              onChange={(e) => field.onChange(e.target.checked)}
+                              className="h-4 w-4 rounded border"
+                            />
+                          </FormControl>
+                          <FormLabel className="!mt-0">Colação</FormLabel>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {form.watch("colacao") && (
+                      <FormField
+                        control={form.control}
+                        name="valor_colacao"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Valor da Colação</FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="R$ 0,00"
+                                value={
+                                  field.value ? formatCurrency(field.value) : ""
+                                }
+                                onChange={handleColacaoValueChange}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    )}
+
+                    <FormField
+                      control={form.control}
+                      name="baile"
+                      render={({ field }) => (
+                        <FormItem className="flex items-center space-x-2">
+                          <FormControl>
+                            <input
+                              type="checkbox"
+                              checked={Boolean(field.value)}
+                              onChange={(e) => field.onChange(e.target.checked)}
+                              className="h-4 w-4 rounded border"
+                            />
+                          </FormControl>
+                          <FormLabel className="!mt-0">Baile</FormLabel>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {form.watch("baile") && (
+                      <FormField
+                        control={form.control}
+                        name="valor_baile"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Valor do Baile</FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="R$ 0,00"
+                                value={
+                                  field.value ? formatCurrency(field.value) : ""
+                                }
+                                onChange={handleBaileValueChange}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    )}
+
+                    <FormField
+                      control={form.control}
+                      name="convite_extra"
+                      render={({ field }) => (
+                        <FormItem className="flex items-center space-x-2">
+                          <FormControl>
+                            <input
+                              type="checkbox"
+                              checked={Boolean(field.value)}
+                              onChange={(e) => field.onChange(e.target.checked)}
+                              className="h-4 w-4 rounded border"
+                            />
+                          </FormControl>
+                          <FormLabel className="!mt-0">Convite Extra</FormLabel>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {form.watch("convite_extra") && (
+                      <FormField
+                        control={form.control}
+                        name="valor_convite_extra"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Valor do Convite Extra</FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="R$ 0,00"
+                                value={
+                                  field.value ? formatCurrency(field.value) : ""
+                                }
+                                onChange={handleConviteExtraValueChange}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    )}
+
+                    <DialogFooter className="flex-col sm:flex-row gap-2 justify-end">
+                      <Dialog open={isExtrasOpen} onOpenChange={setIsExtrasOpen}>
+                        <DialogTrigger asChild>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="w-full sm:w-auto"
+                            disabled={upsertAlunoAction.isPending}
+                          >
+                            Extras
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Itens extras</DialogTitle>
+                            <DialogDescription>
+                              Marque aqui os itens adquiridos fora do contrato.
+                            </DialogDescription>
+                          </DialogHeader>
+                          <div className="space-y-4">
+                            <div className="space-y-2">
+                              <FormLabel>Itens</FormLabel>
+                              <div className="flex flex-col gap-2">
+                                <label className="flex items-center gap-2 text-sm">
+                                  <input
+                                    type="checkbox"
+                                    className="h-4 w-4 rounded border"
+                                    checked={extraAlbum}
+                                    onChange={(e) => setExtraAlbum(e.target.checked)}
+                                  />
+                                  <span>Álbum</span>
+                                </label>
+                                <label className="flex items-center gap-2 text-sm">
+                                  <input
+                                    type="checkbox"
+                                    className="h-4 w-4 rounded border"
+                                    checked={extraConvite}
+                                    onChange={(e) => setExtraConvite(e.target.checked)}
+                                  />
+                                  <span>Convite extra</span>
+                                </label>
+                              </div>
+                            </div>
+
+                            <div className="space-y-2">
+                              <FormLabel>Valor total</FormLabel>
+                              <Input
+                                placeholder="R$ 0,00"
+                                value={
+                                  extraValue ? formatCurrency(extraValue) : ""
+                                }
+                                onChange={handleExtraValueChange}
+                              />
+                            </div>
+                            <DialogFooter className="flex-col sm:flex-row gap-2 justify-end">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                className="w-full sm:w-auto"
+                                disabled={addAlunoExtraAction.isPending || !aluno}
+                                onClick={() => {
+                                  if (!aluno) return;
+                                  const total = extraValue.trim();
+                                  if (!total) {
+                                    toast.error("Informe o valor total do item extra");
+                                    return;
+                                  }
+                                  if (!extraAlbum && !extraConvite) {
+                                    toast.error("Selecione pelo menos um item extra");
+                                    return;
+                                  }
+                                  if (extraAlbum) {
+                                    addAlunoExtraAction.execute({
+                                      alunoId: aluno.id,
+                                      type: "album",
+                                      total,
+                                    });
+                                  }
+                                  if (extraConvite) {
+                                    addAlunoExtraAction.execute({
+                                      alunoId: aluno.id,
+                                      type: "convite_extra",
+                                      total,
+                                    });
+                                  }
+                                }}
+                              >
+                                {addAlunoExtraAction.isPending
+                                  ? "Salvando..."
+                                  : "Salvar"}
+                              </Button>
+                            </DialogFooter>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                      <Button
+                        type="button"
+                        onClick={form.handleSubmit(onSubmit)}
+                        disabled={upsertAlunoAction.isPending}
+                        className="w-full sm:w-auto"
+                      >
+                        {upsertAlunoAction.isPending
+                          ? "Salvando..."
+                          : "Salvar Finanças"}
+                      </Button>
+                    </DialogFooter>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
+
+            <Button
+              type="submit"
+              disabled={upsertAlunoAction.isPending}
+              className="w-full sm:w-auto"
+            >
               {upsertAlunoAction.isPending
                 ? "Salvando..."
                 : aluno

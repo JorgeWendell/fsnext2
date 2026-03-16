@@ -64,14 +64,12 @@ interface UpsertEscolaFormProps {
   escola?: typeof escolasTable.$inferSelect;
   onSuccess?: () => void;
   representantes: Representante[];
-  escolas?: typeof escolasTable.$inferSelect[];
 }
 
 const UpsertEscolaForm = ({
   escola,
   onSuccess,
   representantes = [],
-  escolas: allEscolas = [],
 }: UpsertEscolaFormProps) => {
   const isEditing = !!escola;
   
@@ -86,23 +84,6 @@ const UpsertEscolaForm = ({
       representante: escola?.representanteId ?? "",
     },
   });
-
-  const generateNextCodigo = React.useCallback(() => {
-    if (isEditing) return;
-
-    const totalEscolas = allEscolas.length;
-    const proximoNumero = totalEscolas + 1;
-    const codigo = 100 + (proximoNumero - 1) * 10;
-    const codigoFormatado = codigo.toString().padStart(3, "0");
-    
-    form.setValue("codigo", codigoFormatado);
-  }, [allEscolas, isEditing, form]);
-
-  React.useEffect(() => {
-    if (!isEditing) {
-      generateNextCodigo();
-    }
-  }, [isEditing, generateNextCodigo]);
 
   const upsertEscolaAction = useAction(upsertEscola, {
     onSuccess: () => {
@@ -151,7 +132,7 @@ const UpsertEscolaForm = ({
                 <FormMessage />
                 {!isEditing && (
                   <p className="text-xs text-muted-foreground">
-                    Código gerado automaticamente
+                    Informe um código de 3 dígitos. Após salvar, não poderá ser alterado.
                   </p>
                 )}
                 {isEditing && (

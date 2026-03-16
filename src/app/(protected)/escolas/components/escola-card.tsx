@@ -33,10 +33,9 @@ type Representante = {
 interface EscolaCardProps {
   escola: typeof escolasTable.$inferSelect;
   representantes: Representante[];
-  escolas?: typeof escolasTable.$inferSelect[];
 }
 
-const EscolaCard = ({ escola, representantes, escolas = [] }: EscolaCardProps) => {
+const EscolaCard = ({ escola, representantes }: EscolaCardProps) => {
   const [isUpsertEscolaDialogOpen, setIsUpsertEscolaDialogOpen] =
     useState(false);
 
@@ -106,7 +105,6 @@ const EscolaCard = ({ escola, representantes, escolas = [] }: EscolaCardProps) =
           <UpsertEscolaForm
             escola={escola}
             representantes={representantes}
-            escolas={escolas}
             onSuccess={() => setIsUpsertEscolaDialogOpen(false)}
           />
         </Dialog>

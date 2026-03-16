@@ -17,7 +17,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import {
   Table,
   TableBody,
@@ -26,7 +26,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { alunosTable } from "@/db/schema";
+import { alunoExtrasTable, alunosTable } from "@/db/schema";
 
 import UpsertAlunoForm from "./upsert-aluno-form";
 
@@ -38,13 +38,13 @@ type Escola = {
 interface AlunosTableProps {
   alunos: (typeof alunosTable.$inferSelect)[];
   escolas: Escola[];
+  extras?: typeof alunoExtrasTable.$inferSelect[];
 }
 
-const AlunosTable = ({ alunos, escolas }: AlunosTableProps) => {
+const AlunosTable = ({ alunos, escolas, extras = [] }: AlunosTableProps) => {
   const [editingAluno, setEditingAluno] = useState<
     typeof alunosTable.$inferSelect | null
   >(null);
-
   const getEscolaName = (escolaId: string) => {
     const escola = escolas.find((e) => e.id === escolaId);
     return escola?.name || "Escola não encontrada";
@@ -91,6 +91,7 @@ const AlunosTable = ({ alunos, escolas }: AlunosTableProps) => {
                 <TableHead className="min-w-[80px] hidden md:table-cell">Colação</TableHead>
                 <TableHead className="min-w-[80px] hidden md:table-cell">Baile</TableHead>
                 <TableHead className="min-w-[100px] hidden lg:table-cell">Convite Extra</TableHead>
+                <TableHead className="min-w-[100px] hidden lg:table-cell">Obs</TableHead>
                 <TableHead className="text-right min-w-[100px]">Ações</TableHead>
               </TableRow>
             </TableHeader>
@@ -105,20 +106,31 @@ const AlunosTable = ({ alunos, escolas }: AlunosTableProps) => {
               </TableCell>
             </TableRow>
           ) : (
-            alunos.map((aluno) => (
-              <TableRow key={aluno.id}>
-                <TableCell>{aluno.codigo}</TableCell>
-                <TableCell className="font-medium">
-                  <div className="flex flex-col">
-                    <span>{aluno.name}</span>
-                    <span className="text-xs text-muted-foreground md:hidden">
-                      {aluno.class} • {formatSex(aluno.sex)}
-                    </span>
-                  </div>
-                </TableCell>
-                <TableCell className="hidden md:table-cell">{aluno.class}</TableCell>
-                <TableCell className="hidden lg:table-cell">{getEscolaName(aluno.escola)}</TableCell>
-                <TableCell className="hidden sm:table-cell">{formatSex(aluno.sex)}</TableCell>
+            alunos.map((aluno) => {
+              const disabled = aluno.active === false;
+              return (
+                <TableRow
+                  key={aluno.id}
+                  className={disabled ? "text-red-500" : ""}
+                >
+                  <TableCell>{aluno.codigo}</TableCell>
+                  <TableCell className="font-medium">
+                    <div className="flex flex-col">
+                      <span>{aluno.name}</span>
+                      <span className="text-xs text-muted-foreground md:hidden">
+                        {aluno.class} • {formatSex(aluno.sex)}
+                      </span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="hidden md:table-cell">
+                    {aluno.class}
+                  </TableCell>
+                  <TableCell className="hidden lg:table-cell">
+                    {getEscolaName(aluno.escola)}
+                  </TableCell>
+                  <TableCell className="hidden sm:table-cell">
+                    {formatSex(aluno.sex)}
+                  </TableCell>
                 <TableCell className="hidden md:table-cell">
                   {(
                     aluno as typeof alunosTable.$inferSelect & {
@@ -227,7 +239,7 @@ const AlunosTable = ({ alunos, escolas }: AlunosTableProps) => {
                       convite_extra?: boolean;
                       valor_convite_extra?: string;
                     }
-                  )?.convite_extra ? (
+                    )?.convite_extra ? (
                     <div>
                       <div>Sim</div>
                       {(
@@ -255,56 +267,109 @@ const AlunosTable = ({ alunos, escolas }: AlunosTableProps) => {
                     "Não"
                   )}
                 </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-1 sm:gap-2">
+                <TableCell className="hidden lg:table-cell">
+                  {extras.some(
+                    (extra) =>
+                      extra.alunoId === aluno.id && extra.paid === true,
+                  ) && (
                     <Dialog>
                       <DialogTrigger asChild>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleEditAluno(aluno)}
-                        >
-                          <Edit className="h-4 w-4" />
+                        <Button variant="outline" size="sm">
+                          Ver
                         </Button>
                       </DialogTrigger>
-                      {editingAluno && editingAluno.id === aluno.id && (
-                        <UpsertAlunoForm
-                          aluno={editingAluno}
-                          escolas={escolas}
-                          onSuccess={handleCloseEditDialog}
-                        />
-                      )}
+                      <DialogContent className="max-w-lg">
+                        <DialogHeader>
+                          <DialogTitle>Itens extras pagos</DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-2 text-sm">
+                          {extras
+                            .filter(
+                              (extra) =>
+                                extra.alunoId === aluno.id &&
+                                extra.paid === true,
+                            )
+                            .map((extra) => (
+                              <div
+                                key={extra.id}
+                                className="flex items-center justify-between rounded border px-3 py-2"
+                              >
+                                <span>
+                                  {extra.type === "album"
+                                    ? "Álbum"
+                                    : extra.type === "convite_extra"
+                                      ? "Convite extra"
+                                      : extra.type}
+                                </span>
+                                <span className="font-semibold">
+                                  R${" "}
+                                  {parseFloat(extra.total || "0")
+                                    .toFixed(2)
+                                    .replace(".", ",")}
+                                </span>
+                              </div>
+                            ))}
+                        </div>
+                      </DialogContent>
                     </Dialog>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="outline" size="sm">
-                          <TrashIcon className="h-4 w-4" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>
-                            Tem certeza que quer deletar esse Aluno?
-                          </AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Essa ação não pode ser revertida. Isso irá deletar o
-                            Aluno e todos os dados relacionados a ele.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => handleDeleteAlunoClick(aluno.id)}
-                          >
-                            Deletar
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
+                  )}
                 </TableCell>
-              </TableRow>
-            ))
+                <TableCell className="text-right">
+                    <div className="flex justify-end gap-1 sm:gap-2">
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEditAluno(aluno)}
+                            disabled={disabled}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        </DialogTrigger>
+                        {editingAluno && editingAluno.id === aluno.id && (
+                          <UpsertAlunoForm
+                            aluno={editingAluno}
+                            escolas={escolas}
+                            onSuccess={handleCloseEditDialog}
+                          />
+                        )}
+                      </Dialog>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={disabled}
+                          >
+                            <TrashIcon className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>
+                              Tem certeza que quer deletar esse Aluno?
+                            </AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Essa ação não pode ser revertida. Isso irá deletar
+                              o Aluno e todos os dados relacionados a ele.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleDeleteAlunoClick(aluno.id)}
+                            >
+                              Deletar
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              );
+            })
           )}
         </TableBody>
           </Table>

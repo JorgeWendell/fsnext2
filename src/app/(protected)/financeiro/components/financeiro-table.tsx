@@ -12,8 +12,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { alunosTable, financesTable } from "@/db/schema";
+import { alunoExtrasTable, alunosTable, financesTable } from "@/db/schema";
 
+import ExtrasDialog from "./extras-dialog";
 import FinanceiroDialog from "./financeiro-dialog";
 
 type Escola = {
@@ -25,6 +26,7 @@ interface FinanceiroTableProps {
   alunos: typeof alunosTable.$inferSelect[];
   escolas: Escola[];
   finances: typeof financesTable.$inferSelect[];
+  extras: typeof alunoExtrasTable.$inferSelect[];
   getEscolaName: (escolaId: string) => string;
   getAlunoName: (alunoId: string) => string;
   getAlunoClass: (alunoId: string) => string;
@@ -35,6 +37,7 @@ interface FinanceiroTableProps {
 const FinanceiroTable = ({ 
   alunos, 
   finances,
+  extras,
   getEscolaName,
   onRefresh
 }: FinanceiroTableProps) => {
@@ -52,6 +55,10 @@ const FinanceiroTable = ({
     return finances.filter(finance => finance.alunoId === alunoId);
   };
 
+  const hasAlunoExtras = (alunoId: string) => {
+    return extras.some((extra) => extra.alunoId === alunoId);
+  };
+
   return (
     <>
       <Table>
@@ -60,6 +67,7 @@ const FinanceiroTable = ({
             <TableHead>Nome do Aluno</TableHead>
             <TableHead>Escola</TableHead>
             <TableHead>Classe</TableHead>
+            <TableHead>Extra</TableHead>
             <TableHead className="text-right">Dados Financeiros</TableHead>
           </TableRow>
         </TableHeader>
@@ -74,12 +82,36 @@ const FinanceiroTable = ({
             alunos.map((aluno) => {
               const alunoFinances = getAlunoFinances(aluno.id);
               const hasFinances = alunoFinances.length > 0;
+              const hasExtras = hasAlunoExtras(aluno.id);
+              const hasUnpaidExtras = extras.some(
+                (extra) => extra.alunoId === aluno.id && !extra.paid,
+              );
               
               return (
                 <TableRow key={aluno.id}>
                   <TableCell className="font-medium">{aluno.name}</TableCell>
                   <TableCell>{getEscolaName(aluno.escola)}</TableCell>
                   <TableCell>{aluno.class}</TableCell>
+                  <TableCell>
+                    {hasExtras && (
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button
+                            variant={hasUnpaidExtras ? "destructive" : "default"}
+                            size="sm"
+                          >
+                            Pagamento
+                          </Button>
+                        </DialogTrigger>
+                        <ExtrasDialog
+                          aluno={aluno}
+                          extras={extras.filter(
+                            (extra) => extra.alunoId === aluno.id,
+                          )}
+                        />
+                      </Dialog>
+                    )}
+                  </TableCell>
                   <TableCell className="text-right">
                     <Dialog>
                       <DialogTrigger asChild>

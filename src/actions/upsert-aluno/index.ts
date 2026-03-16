@@ -40,6 +40,7 @@ export const upsertAluno = actionClient
         valor_baile: parsedInput.valor_baile,
         convite_extra: parsedInput.convite_extra ?? false,
         valor_convite_extra: parsedInput.valor_convite_extra,
+        active: parsedInput.active ?? true,
       })
       .onConflictDoUpdate({
         target: alunosTable.id,
@@ -60,6 +61,7 @@ export const upsertAluno = actionClient
           valor_baile: parsedInput.valor_baile,
           convite_extra: parsedInput.convite_extra ?? false,
           valor_convite_extra: parsedInput.valor_convite_extra,
+          active: parsedInput.active ?? true,
         },
       });
     revalidatePath("/alunos");

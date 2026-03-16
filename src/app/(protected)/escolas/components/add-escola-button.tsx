@@ -1,12 +1,12 @@
 "use client";
 
+/* eslint-disable simple-import-sort/imports */
+
 import { Plus } from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
-import { escolasTable } from "@/db/schema";
-
 import UpsertEscolaForm from "./upsert-escola-form";
 
 interface AddEscolaButtonProps {
@@ -14,10 +14,9 @@ interface AddEscolaButtonProps {
     id: string;
     name: string;
   }>;
-  escolas?: typeof escolasTable.$inferSelect[];
 }
 
-const AddEscolaButton = ({ representantes, escolas = [] }: AddEscolaButtonProps) => {
+const AddEscolaButton = ({ representantes }: AddEscolaButtonProps) => {
   const [isOpen, setIsOpen] = useState(false);
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -31,7 +30,6 @@ const AddEscolaButton = ({ representantes, escolas = [] }: AddEscolaButtonProps)
       <UpsertEscolaForm 
         onSuccess={() => setIsOpen(false)} 
         representantes={representantes}
-        escolas={escolas}
       />
     </Dialog>
   );

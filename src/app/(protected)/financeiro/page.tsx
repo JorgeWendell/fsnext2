@@ -10,7 +10,12 @@ import {
   PageTitle,
 } from "@/components/ui/page-container";
 import { db } from "@/db";
-import { alunosTable, escolasTable, financesTable } from "@/db/schema";
+import {
+  alunoExtrasTable,
+  alunosTable,
+  escolasTable,
+  financesTable,
+} from "@/db/schema";
 import { auth } from "@/lib/auth";
 
 import FinanceiroWrapper from "./components/financeiro-wrapper";
@@ -20,27 +25,33 @@ const FinanceiroPage = async () => {
     headers: await headers(),
   });
   if (!session?.user) {
-    redirect("/authentication");
+    redirect("/login");
   }
 
   let alunos: typeof alunosTable.$inferSelect[] = [];
   let escolas: typeof escolasTable.$inferSelect[] = [];
   let finances: typeof financesTable.$inferSelect[] = [];
+  let extras: typeof alunoExtrasTable.$inferSelect[] = [];
   
   try {
-    [escolas, alunos, finances] = await Promise.all([
+    [escolas, alunos, finances, extras] = await Promise.all([
       db.select().from(escolasTable),
-      db.query.alunosTable.findMany(),
+      db.query.alunosTable.findMany({
+        where: (aluno, { eq: eqField }) => eqField(aluno.active, true),
+      }),
       db.select().from(financesTable),
+      db.select().from(alunoExtrasTable),
     ]);
     if (!Array.isArray(escolas)) escolas = [];
     if (!Array.isArray(alunos)) alunos = [];
     if (!Array.isArray(finances)) finances = [];
+    if (!Array.isArray(extras)) extras = [];
   } catch (error) {
     console.error("Erro ao buscar dados:", error);
     escolas = [];
     alunos = [];
     finances = [];
+    extras = [];
   }
 
   return (
@@ -55,7 +66,8 @@ const FinanceiroPage = async () => {
         <FinanceiroWrapper 
           alunos={alunos} 
           escolas={escolas} 
-          finances={finances} 
+          finances={finances}
+          extras={extras}
         />
       </PageContent>
     </PageContainer>

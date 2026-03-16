@@ -59,7 +59,7 @@ const DashboardPage = async () => {
     headers: await headers(),
   });
   if (!session?.user) {
-    redirect("/authentication");
+    redirect("/login");
   }
 
   let alunosCount = 0;

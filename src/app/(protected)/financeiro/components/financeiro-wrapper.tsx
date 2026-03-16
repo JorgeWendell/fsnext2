@@ -1,7 +1,12 @@
 "use client";
 import { useRouter } from "next/navigation";
 
-import { alunosTable, escolasTable, financesTable } from "@/db/schema";
+import {
+  alunoExtrasTable,
+  alunosTable,
+  escolasTable,
+  financesTable,
+} from "@/db/schema";
 
 import FinanceiroWithSearch from "./financeiro-with-search";
 
@@ -9,9 +14,15 @@ interface FinanceiroWrapperProps {
   alunos: typeof alunosTable.$inferSelect[];
   escolas: typeof escolasTable.$inferSelect[];
   finances: typeof financesTable.$inferSelect[];
+  extras: typeof alunoExtrasTable.$inferSelect[];
 }
 
-const FinanceiroWrapper = ({ alunos, escolas, finances }: FinanceiroWrapperProps) => {
+const FinanceiroWrapper = ({
+  alunos,
+  escolas,
+  finances,
+  extras,
+}: FinanceiroWrapperProps) => {
   const router = useRouter();
 
   const handleRefresh = () => {
@@ -22,7 +33,8 @@ const FinanceiroWrapper = ({ alunos, escolas, finances }: FinanceiroWrapperProps
     <FinanceiroWithSearch 
       alunos={alunos} 
       escolas={escolas} 
-      finances={finances} 
+      finances={finances}
+      extras={extras}
       onRefresh={handleRefresh}
     />
   );

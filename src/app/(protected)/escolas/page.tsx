@@ -22,7 +22,7 @@ const EscolasPage = async () => {
     headers: await headers(),
   });
   if (!session?.user) {
-    redirect("/authentication");
+    redirect("/login");
   }
 
   let escolas: typeof escolasTable.$inferSelect[] = [];

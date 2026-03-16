@@ -114,7 +114,7 @@ const BoletosPreviewDialog = ({ finances, isOpen, onClose, onRefresh }: BoletosP
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-full max-w-md">
+      <DialogContent className="w-full max-w-md max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Boletos - Pré-visualização</DialogTitle>
           <DialogDescription>

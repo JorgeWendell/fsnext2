@@ -118,7 +118,6 @@ const EscolasWithSearch = ({ escolas, representantes }: EscolasWithSearchProps) 
                 key={escola.id}
                 escola={escola}
                 representantes={representantes}
-                escolas={escolas}
               />
             ))}
           </div>

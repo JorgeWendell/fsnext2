@@ -124,6 +124,7 @@ export const alunosTable = pgTable("alunos", {
   valor_baile: text("valor_baile"),
   convite_extra: boolean("convite_extra").notNull().default(false),
   valor_convite_extra: text("valor_convite_extra"),
+  active: boolean("active").notNull().default(true),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updateAt: timestamp("update_at")
     .notNull()
@@ -189,3 +190,17 @@ export const alunoFinance = relations(alunosTable, ({ one }) => ({
     references: [financesTable.alunoId],
   }),
 }));
+
+export const alunoExtrasTable = pgTable("aluno_extras", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  alunoId: uuid("aluno_id")
+    .notNull()
+    .references(() => alunosTable.id, { onDelete: "cascade" }),
+  type: text("type").notNull(),
+  total: text("total").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  paid: boolean("paid").notNull().default(false),
+  paidMethod: text("paid_method"),
+  paidAt: timestamp("paid_at"),
+});
+

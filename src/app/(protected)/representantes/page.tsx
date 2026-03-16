@@ -21,7 +21,7 @@ const RepresentantesPage = async () => {
     headers: await headers(),
   });
   if (!session?.user) {
-    redirect("/authentication");
+    redirect("/login");
   }
 
   const representantes = await db.query.representantesTable.findMany({});

@@ -12,7 +12,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import { alunosTable, financesTable } from "@/db/schema";
+import { alunoExtrasTable, alunosTable, financesTable } from "@/db/schema";
 
 import FinanceiroTable from "./financeiro-table";
 
@@ -26,10 +26,17 @@ interface FinanceiroWithSearchProps {
   alunos: typeof alunosTable.$inferSelect[];
   escolas: Escola[];
   finances: typeof financesTable.$inferSelect[];
+  extras: typeof alunoExtrasTable.$inferSelect[];
   onRefresh: () => void;
 }
 
-const FinanceiroWithSearch = ({ alunos, escolas, finances, onRefresh }: FinanceiroWithSearchProps) => {
+const FinanceiroWithSearch = ({
+  alunos,
+  escolas,
+  finances,
+  extras,
+  onRefresh,
+}: FinanceiroWithSearchProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 15;
@@ -156,6 +163,7 @@ const FinanceiroWithSearch = ({ alunos, escolas, finances, onRefresh }: Financei
         alunos={paginatedAlunos} 
         escolas={escolas} 
         finances={finances}
+        extras={extras}
         getEscolaName={getEscolaName}
         getAlunoName={getAlunoName}
         getAlunoClass={getAlunoClass}

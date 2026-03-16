@@ -14,7 +14,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import { alunosTable } from "@/db/schema";
+import { alunoExtrasTable, alunosTable } from "@/db/schema";
 
 import AlunosTable from "./alunos-table";
 
@@ -27,9 +27,10 @@ type Escola = {
 interface AlunosWithSearchProps {
   alunos: typeof alunosTable.$inferSelect[];
   escolas: Escola[];
+  extras?: typeof alunoExtrasTable.$inferSelect[];
 }
 
-const AlunosWithSearch = ({ alunos, escolas }: AlunosWithSearchProps) => {
+const AlunosWithSearch = ({ alunos, escolas, extras = [] }: AlunosWithSearchProps) => {
   const searchParams = useSearchParams();
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -185,7 +186,7 @@ const AlunosWithSearch = ({ alunos, escolas }: AlunosWithSearchProps) => {
           {filteredAlunos.length} aluno(s) encontrado(s)
         </div>
       </div>
-      <AlunosTable alunos={paginatedAlunos} escolas={escolas} />
+      <AlunosTable alunos={paginatedAlunos} escolas={escolas} extras={extras} />
       {totalPages > 1 && (
         <Pagination>
           <PaginationContent>

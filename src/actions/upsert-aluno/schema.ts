@@ -25,6 +25,7 @@ export const upsertAlunoSchema = z.object({
   valor_baile: z.string().optional(),
   convite_extra: z.boolean().default(false).optional(),
   valor_convite_extra: z.string().optional(),
+  active: z.boolean().default(true).optional(),
 });
 
 export type upsertAlunoSchema = z.infer<typeof upsertAlunoSchema>;

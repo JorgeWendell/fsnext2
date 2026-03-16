@@ -10,7 +10,7 @@ import AlbunsWrapper from "./components/albuns-wrapper";
 
 const AlbunsPage = async () => {
   const session = await auth.api.getSession({ headers: await headers() });
-  if (!session?.user) redirect("/authentication");
+  if (!session?.user) redirect("/login");
 
   let alunos: typeof alunosTable.$inferSelect[] = [];
   let escolas: typeof escolasTable.$inferSelect[] = [];

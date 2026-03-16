@@ -1,3 +1,4 @@
+import { and, eq, lt } from "drizzle-orm";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
@@ -11,7 +12,7 @@ import {
   PageTitle,
 } from "@/components/ui/page-container";
 import { db } from "@/db";
-import { alunosTable,escolasTable } from "@/db/schema";
+import { alunoExtrasTable, alunosTable, escolasTable } from "@/db/schema";
 import { auth } from "@/lib/auth";
 
 import AddAlunoButton from "./components/add-aluno-button";
@@ -22,22 +23,40 @@ const AlunosPage = async () => {
     headers: await headers(),
   });
   if (!session?.user) {
-    redirect("/authentication");
+    redirect("/login");
   }
 
   let alunos: typeof alunosTable.$inferSelect[] = [];
   let escolas: typeof escolasTable.$inferSelect[] = [];
+  let extras: typeof alunoExtrasTable.$inferSelect[] = [];
 
   try {
-    [alunos, escolas] = await Promise.all([
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
+    await db
+      .delete(alunosTable)
+      .where(
+        and(
+          eq(alunosTable.active, false),
+          lt(alunosTable.updateAt, thirtyDaysAgo),
+        ),
+      );
+
+    [alunos, escolas, extras] = await Promise.all([
       db.query.alunosTable.findMany(),
       db.select().from(escolasTable),
+      db
+        .select()
+        .from(alunoExtrasTable)
+        .where(eq(alunoExtrasTable.paid, true)),
     ]);
     if (!Array.isArray(escolas)) escolas = [];
+    if (!Array.isArray(extras)) extras = [];
   } catch (error) {
     console.error("Erro ao buscar dados:", error);
     alunos = [];
     escolas = [];
+    extras = [];
   }
 
   const escolasArray = Array.isArray(escolas) ? escolas : [];
@@ -53,11 +72,11 @@ const AlunosPage = async () => {
           <PageDescription>Gerencie seus alunos</PageDescription>
         </PageHeaderContent>
         <PageActions>
-          <AddAlunoButton escolas={escolasArray} alunos={alunos} />
+          <AddAlunoButton escolas={escolasArray} />
         </PageActions>
       </PageHeader>
       <PageContent>
-        <AlunosWithSearch alunos={alunos} escolas={escolasArray} />
+        <AlunosWithSearch alunos={alunos} escolas={escolasArray} extras={extras} />
       </PageContent>
     </PageContainer>
   );
