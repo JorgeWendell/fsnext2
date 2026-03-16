@@ -376,30 +376,7 @@ const UpsertAlunoForm = ({
               </FormItem>
             )}
           />
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <FormField
-              control={form.control}
-              name="phone"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Telefone</FormLabel>
-                  <FormControl>
-                    <PatternFormat
-                      format="(##) #####-####"
-                      mask="_"
-                      value={field.value ?? ""}
-                      onValueChange={(values) => {
-                        field.onChange(values.value);
-                      }}
-                      getInputRef={field.ref}
-                      onBlur={field.onBlur}
-                      customInput={Input}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <FormField
               control={form.control}
               name="sex"
@@ -421,6 +398,29 @@ const UpsertAlunoForm = ({
                       </SelectGroup>
                     </SelectContent>
                   </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="phone"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Telefone</FormLabel>
+                  <FormControl>
+                    <PatternFormat
+                      format="(##) #####-####"
+                      mask="_"
+                      value={field.value ?? ""}
+                      onValueChange={(values) => {
+                        field.onChange(values.value);
+                      }}
+                      getInputRef={field.ref}
+                      onBlur={field.onBlur}
+                      customInput={Input}
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
