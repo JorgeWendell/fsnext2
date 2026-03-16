@@ -55,7 +55,7 @@ const EscolasPage = async () => {
           <PageDescription>Gerencie suas escolas</PageDescription>
         </PageHeaderContent>
         <PageActions>
-          <AddEscolaButton representantes={representantesArray} escolas={escolas} />
+          <AddEscolaButton representantes={representantesArray} />
         </PageActions>
       </PageHeader>
       <PageContent>
