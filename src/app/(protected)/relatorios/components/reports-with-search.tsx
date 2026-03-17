@@ -19,7 +19,7 @@ import { alunoExtrasTable, alunosTable, financesTable } from "@/db/schema";
 
 import ReportsTable from "./reports-table";
 
-type Escola = { id: string; name: string; codigo: string };
+type Escola = { id: string; name: string; codigo: string; ano: string | null };
 
 interface Props {
   alunos: (typeof alunosTable.$inferSelect)[];
@@ -47,6 +47,14 @@ const ReportsWithSearch = ({ alunos, escolas, finances, extras }: Props) => {
     const classes = [...new Set(alunos.map((a) => a.class))];
     return classes.sort();
   }, [alunos]);
+
+  const classesForSelectedSchool = useMemo(() => {
+    if (!schoolId) return [];
+    const schoolClasses = alunos
+      .filter((a) => a.escola === schoolId)
+      .map((a) => a.class);
+    return [...new Set(schoolClasses)].sort();
+  }, [alunos, schoolId]);
 
   const getEscolaCodigo = useCallback(
     (id: string) => escolas.find((e) => e.id === id)?.codigo ?? "",
@@ -402,9 +410,12 @@ const ReportsWithSearch = ({ alunos, escolas, finances, extras }: Props) => {
     // Extrair apenas as rows para o body
     const monthBodyRows = monthBody.map((item) => item.row);
 
-    // Calcular totais mensais
+    // Calcular totais mensais e subtotal por aluno
     const monthlyTotals = Array(monthsCount).fill(0);
+    const rowSubtotals: number[] = [];
+
     monthBodyRows.forEach((row) => {
+      let rowTotal = 0;
       for (let i = 0; i < monthsCount; i++) {
         const value = row[i + 2]; // +2 porque os primeiros são "Aluno" e "Escola"
         if (value && value !== "") {
@@ -417,9 +428,26 @@ const ReportsWithSearch = ({ alunos, escolas, finances, extras }: Props) => {
           );
           if (!isNaN(numericValue)) {
             monthlyTotals[i] += numericValue;
+            rowTotal += numericValue;
           }
         }
       }
+      rowSubtotals.push(rowTotal);
+    });
+
+    // Adicionar coluna de "Subtotal" ao cabeçalho
+    monthHeader.push("Subtotal");
+
+    // Calcular total geral (soma dos subtotais de todos os alunos)
+    const classTotal = rowSubtotals.reduce((sum, v) => sum + v, 0);
+
+    // Adicionar subtotal ao final de cada linha de aluno
+    const bodyWithSubtotal = monthBodyRows.map((row, index) => {
+      const subtotal = rowSubtotals[index];
+      return [
+        ...row,
+        subtotal > 0 ? currency(subtotal).replace("R$", "").trim() : "",
+      ];
     });
 
     // Criar linha de total
@@ -429,10 +457,11 @@ const ReportsWithSearch = ({ alunos, escolas, finances, extras }: Props) => {
       ...monthlyTotals.map((total) =>
         total > 0 ? currency(total).replace("R$", "").trim() : ""
       ),
+      classTotal > 0 ? currency(classTotal).replace("R$", "").trim() : "",
     ];
 
     // Adicionar linha de total ao body
-    const bodyWithTotal = [...monthBodyRows, totalRow];
+    const bodyWithTotal = [...bodyWithSubtotal, totalRow];
 
     const startY = finalY;
     autoTable(doc, {
@@ -449,11 +478,21 @@ const ReportsWithSearch = ({ alunos, escolas, finances, extras }: Props) => {
       margin: { top: 40, right: 14, bottom: 20, left: 14 },
       didParseCell: function (data) {
         // Aplicar negrito na última linha (total)
-        if (data.row.index === monthBodyRows.length) {
+        if (data.row.index === bodyWithSubtotal.length) {
           data.cell.styles.fontStyle = "bold";
         }
       },
     });
+
+    // Texto com total geral da classe abaixo da tabela
+    const tableEndY =
+      (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable
+        .finalY + 10;
+    doc.text(
+      `Total geral da classe: ${currency(classTotal)}`,
+      14,
+      tableEndY
+    );
 
     doc.save(`relatorio-classe-${selectedClass}.pdf`);
   };
@@ -472,14 +511,20 @@ const ReportsWithSearch = ({ alunos, escolas, finances, extras }: Props) => {
         </div>
         <div className="flex flex-col gap-2 md:flex-row md:items-center">
           <div className="flex items-center gap-2">
-            <Select value={schoolId} onValueChange={setSchoolId}>
+            <Select
+              value={schoolId}
+              onValueChange={(value) => {
+                setSchoolId(value);
+                setSelectedClass("");
+              }}
+            >
               <SelectTrigger className="w-64">
                 <SelectValue placeholder="Selecionar escola" />
               </SelectTrigger>
               <SelectContent>
                 {escolas.map((e) => (
                   <SelectItem key={e.id} value={e.id}>
-                    {e.codigo} - {e.name}
+                    {e.codigo}/{(e.ano || "").slice(-2)} - {e.name}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -489,16 +534,26 @@ const ReportsWithSearch = ({ alunos, escolas, finances, extras }: Props) => {
             </Button>
           </div>
           <div className="flex items-center gap-2">
-            <Select value={selectedClass} onValueChange={setSelectedClass}>
+            <Select
+              value={selectedClass}
+              onValueChange={setSelectedClass}
+              disabled={!schoolId}
+            >
               <SelectTrigger className="w-64">
-                <SelectValue placeholder="Selecionar classe" />
+                <SelectValue
+                  placeholder={
+                    schoolId ? "Selecionar classe" : "Selecione uma escola"
+                  }
+                />
               </SelectTrigger>
               <SelectContent>
-                {uniqueClasses.map((classe) => (
-                  <SelectItem key={classe} value={classe}>
-                    {classe}
-                  </SelectItem>
-                ))}
+                {(schoolId ? classesForSelectedSchool : uniqueClasses).map(
+                  (classe) => (
+                    <SelectItem key={classe} value={classe}>
+                      {classe}
+                    </SelectItem>
+                  )
+                )}
               </SelectContent>
             </Select>
             <Button onClick={handleExportClassPdf} disabled={!selectedClass}>

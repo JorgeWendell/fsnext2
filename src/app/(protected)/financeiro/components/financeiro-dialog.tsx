@@ -94,10 +94,35 @@ const FinanceiroDialog = ({ aluno, finances, onClose, onRefresh }: FinanceiroDia
   // Itens de finanças definidos no cadastro do aluno
   type AlunoFinanceItem = { label: string; enabled: boolean; value: string | null };
   const alunoFinanceItems: AlunoFinanceItem[] = [
-    { label: 'Álbum', enabled: Boolean((aluno as { album?: boolean }).album), value: (aluno as { valor_album?: string | null }).valor_album ?? null },
-    { label: 'Colação', enabled: Boolean((aluno as { colacao?: boolean }).colacao), value: (aluno as { valor_colacao?: string | null }).valor_colacao ?? null },
-    { label: 'Baile', enabled: Boolean((aluno as { baile?: boolean }).baile), value: (aluno as { valor_baile?: string | null }).valor_baile ?? null },
-    { label: 'Convite Extra', enabled: Boolean((aluno as { convite_extra?: boolean }).convite_extra), value: (aluno as { valor_convite_extra?: string | null }).valor_convite_extra ?? null },
+    {
+      label: "Álbum",
+      enabled: Boolean((aluno as { album?: boolean }).album),
+      value: (aluno as { valor_album?: string | null }).valor_album ?? null,
+    },
+    {
+      label: "Colação",
+      enabled: Boolean((aluno as { colacao?: boolean }).colacao),
+      value: (aluno as { valor_colacao?: string | null }).valor_colacao ?? null,
+    },
+    {
+      label: "Baile",
+      enabled: Boolean((aluno as { baile?: boolean }).baile),
+      value: (aluno as { valor_baile?: string | null }).valor_baile ?? null,
+    },
+    {
+      label: "Convite Inteira",
+      enabled: Boolean((aluno as { convite_inteira?: boolean }).convite_inteira),
+      value:
+        (aluno as { valor_convite_inteira?: string | null })
+          .valor_convite_inteira ?? null,
+    },
+    {
+      label: "Convite Meia",
+      enabled: Boolean((aluno as { convite_meia?: boolean }).convite_meia),
+      value:
+        (aluno as { valor_convite_meia?: string | null }).valor_convite_meia ??
+        null,
+    },
   ];
 
   const alunoItemsTotal = alunoFinanceItems.reduce((sum, item) => {

@@ -1,12 +1,12 @@
 "use client";
 
-/* eslint-disable simple-import-sort/imports */
-
 import { Plus } from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
+import { pacotesTable } from "@/db/schema";
+
 import UpsertEscolaForm from "./upsert-escola-form";
 
 interface AddEscolaButtonProps {
@@ -14,9 +14,10 @@ interface AddEscolaButtonProps {
     id: string;
     name: string;
   }>;
+  pacotes: Array<typeof pacotesTable.$inferSelect>;
 }
 
-const AddEscolaButton = ({ representantes }: AddEscolaButtonProps) => {
+const AddEscolaButton = ({ representantes, pacotes }: AddEscolaButtonProps) => {
   const [isOpen, setIsOpen] = useState(false);
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -27,9 +28,10 @@ const AddEscolaButton = ({ representantes }: AddEscolaButtonProps) => {
           <span className="sm:hidden">Adicionar</span>
         </Button>
       </DialogTrigger>
-      <UpsertEscolaForm 
-        onSuccess={() => setIsOpen(false)} 
+      <UpsertEscolaForm
+        onSuccess={() => setIsOpen(false)}
         representantes={representantes}
+        pacotes={pacotes}
       />
     </Dialog>
   );

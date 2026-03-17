@@ -159,25 +159,25 @@ const AlunoCard = ({ aluno, escolas }: AlunoCardProps) => {
               )}
               {(
                 aluno as typeof alunosTable.$inferSelect & {
-                  convite_extra?: boolean;
-                  valor_convite_extra?: string;
+                  convite_inteira?: boolean;
+                  valor_convite_inteira?: string;
                 }
-              )?.convite_extra && (
+              )?.convite_inteira && (
                 <span className="text-xs bg-orange-500/10 text-orange-700 dark:text-orange-400 px-2.5 py-1 rounded-full font-medium border border-orange-500/20">
-                  Convite Extra
+                  Convite Inteira
                   {(
                     aluno as typeof alunosTable.$inferSelect & {
-                      convite_extra?: boolean;
-                      valor_convite_extra?: string;
+                      convite_inteira?: boolean;
+                      valor_convite_inteira?: string;
                     }
-                  )?.valor_convite_extra &&
+                  )?.valor_convite_inteira &&
                     ` - R$ ${parseFloat(
                       (
                         aluno as typeof alunosTable.$inferSelect & {
-                          convite_extra?: boolean;
-                          valor_convite_extra?: string;
+                          convite_inteira?: boolean;
+                          valor_convite_inteira?: string;
                         }
-                      ).valor_convite_extra || "0"
+                      ).valor_convite_inteira || "0"
                     )
                       .toFixed(2)
                       .replace(".", ",")}`}

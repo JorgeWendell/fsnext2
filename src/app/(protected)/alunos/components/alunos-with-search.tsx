@@ -14,7 +14,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import { alunoExtrasTable, alunosTable } from "@/db/schema";
+import { alunoExtrasTable, alunosTable, pacotesTable } from "@/db/schema";
 
 import AlunosTable from "./alunos-table";
 
@@ -22,15 +22,24 @@ type Escola = {
   id: string;
   name: string;
   codigo: string;
+  pacoteId?: string | null;
 };
+
+type Pacote = typeof pacotesTable.$inferSelect;
 
 interface AlunosWithSearchProps {
   alunos: typeof alunosTable.$inferSelect[];
   escolas: Escola[];
   extras?: typeof alunoExtrasTable.$inferSelect[];
+  pacotes: Pacote[];
 }
 
-const AlunosWithSearch = ({ alunos, escolas, extras = [] }: AlunosWithSearchProps) => {
+const AlunosWithSearch = ({
+  alunos,
+  escolas,
+  extras = [],
+  pacotes,
+}: AlunosWithSearchProps) => {
   const searchParams = useSearchParams();
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -90,11 +99,11 @@ const AlunosWithSearch = ({ alunos, escolas, extras = [] }: AlunosWithSearchProp
         album?: boolean;
         colacao?: boolean;
         baile?: boolean;
-        convite_extra?: boolean;
+        convite_inteira?: boolean;
         valor_album?: string;
         valor_colacao?: string;
         valor_baile?: string;
-        valor_convite_extra?: string;
+        valor_convite_inteira?: string;
       };
       return (
         aluno.name.toLowerCase().includes(searchLower) ||
@@ -108,11 +117,11 @@ const AlunosWithSearch = ({ alunos, escolas, extras = [] }: AlunosWithSearchProp
         (alunoExt?.album ? "sim" : "não").includes(searchLower) ||
         (alunoExt?.colacao ? "sim" : "não").includes(searchLower) ||
         (alunoExt?.baile ? "sim" : "não").includes(searchLower) ||
-        (alunoExt?.convite_extra ? "sim" : "não").includes(searchLower) ||
+        (alunoExt?.convite_inteira ? "sim" : "não").includes(searchLower) ||
         (alunoExt?.valor_album || "").includes(searchLower) ||
         (alunoExt?.valor_colacao || "").includes(searchLower) ||
         (alunoExt?.valor_baile || "").includes(searchLower) ||
-        (alunoExt?.valor_convite_extra || "").includes(searchLower) ||
+        (alunoExt?.valor_convite_inteira || "").includes(searchLower) ||
         "álbum".includes(searchLower) ||
         "colação".includes(searchLower) ||
         "baile".includes(searchLower) ||
@@ -186,7 +195,12 @@ const AlunosWithSearch = ({ alunos, escolas, extras = [] }: AlunosWithSearchProp
           {filteredAlunos.length} aluno(s) encontrado(s)
         </div>
       </div>
-      <AlunosTable alunos={paginatedAlunos} escolas={escolas} extras={extras} />
+      <AlunosTable
+        alunos={paginatedAlunos}
+        escolas={escolas}
+        extras={extras}
+        pacotes={pacotes}
+      />
       {totalPages > 1 && (
         <Pagination>
           <PaginationContent>

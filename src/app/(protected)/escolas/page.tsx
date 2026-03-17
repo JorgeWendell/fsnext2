@@ -1,3 +1,5 @@
+/* eslint-disable simple-import-sort/imports */
+
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
@@ -10,8 +12,9 @@ import {
   PageHeaderContent,
   PageTitle,
 } from "@/components/ui/page-container";
+
 import { db } from "@/db";
-import { escolasTable, representantesTable } from "@/db/schema";
+import { escolasTable, pacotesTable, representantesTable } from "@/db/schema";
 import { auth } from "@/lib/auth";
 
 import AddEscolaButton from "./components/add-escola-button";
@@ -27,13 +30,16 @@ const EscolasPage = async () => {
 
   let escolas: typeof escolasTable.$inferSelect[] = [];
   let representantes: typeof representantesTable.$inferSelect[] = [];
+  let pacotes: typeof pacotesTable.$inferSelect[] = [];
 
   try {
-    [escolas, representantes] = await Promise.all([
+    [escolas, representantes, pacotes] = await Promise.all([
       db.query.escolasTable.findMany(),
       db.select().from(representantesTable),
+      db.select().from(pacotesTable),
     ]);
     if (!Array.isArray(representantes)) representantes = [];
+    if (!Array.isArray(pacotes)) pacotes = [];
   } catch (error) {
     console.error("Erro ao buscar dados:", error);
     escolas = [];
@@ -43,6 +49,7 @@ const EscolasPage = async () => {
   const representantesArray = Array.isArray(representantes)
     ? representantes
     : [];
+  const pacotesArray = Array.isArray(pacotes) ? pacotes : [];
  
   
  
@@ -55,13 +62,17 @@ const EscolasPage = async () => {
           <PageDescription>Gerencie suas escolas</PageDescription>
         </PageHeaderContent>
         <PageActions>
-          <AddEscolaButton representantes={representantesArray} />
+          <AddEscolaButton
+            representantes={representantesArray}
+            pacotes={pacotesArray}
+          />
         </PageActions>
       </PageHeader>
       <PageContent>
         <EscolasWithSearch
           escolas={escolas}
           representantes={representantesArray}
+          pacotes={pacotesArray}
         />
       </PageContent>
     </PageContainer>

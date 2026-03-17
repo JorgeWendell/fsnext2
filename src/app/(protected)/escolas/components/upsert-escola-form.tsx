@@ -34,7 +34,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { escolasTable } from "@/db/schema";
+import { escolasTable, pacotesTable } from "@/db/schema";
 
 const formSchema = z.object({
   name: z.string().trim().min(1, { message: "Nome é obrigatório" }),
@@ -43,8 +43,16 @@ const formSchema = z.object({
     .trim()
     .length(3, { message: "Código deve ter exatamente 3 dígitos" })
     .regex(/^\d{3}$/, { message: "Código deve conter apenas números" }),
+  ano: z
+    .string()
+    .trim()
+    .length(4, { message: "Ano deve ter 4 dígitos" })
+    .regex(/^\d{4}$/, { message: "Ano deve conter apenas números" })
+    .optional()
+    .or(z.literal("")),
   address: z.string().trim().optional(),
   phone: z.string().trim().optional(),
+  pacoteId: z.string().uuid().optional().or(z.literal("")),
   representante: z
     .string()
     .trim()
@@ -60,16 +68,20 @@ type Representante = {
   name: string;
 };
 
+type Pacote = typeof pacotesTable.$inferSelect;
+
 interface UpsertEscolaFormProps {
   escola?: typeof escolasTable.$inferSelect;
   onSuccess?: () => void;
   representantes: Representante[];
+  pacotes: Pacote[];
 }
 
 const UpsertEscolaForm = ({
   escola,
   onSuccess,
   representantes = [],
+  pacotes = [],
 }: UpsertEscolaFormProps) => {
   const isEditing = !!escola;
   
@@ -79,8 +91,10 @@ const UpsertEscolaForm = ({
     defaultValues: {
       name: escola?.name ?? "",
       codigo: escola?.codigo ?? "",
+      ano: escola?.ano ?? "",
       address: escola?.address ?? "",
       phone: escola?.phone ?? "",
+      pacoteId: escola?.pacoteId ?? "",
       representante: escola?.representanteId ?? "",
     },
   });
@@ -113,36 +127,45 @@ const UpsertEscolaForm = ({
       </DialogHeader>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
-          <FormField
-            control={form.control}
-            name="codigo"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Código</FormLabel>
-                <FormControl>
-                  <Input 
-                    placeholder="Código" 
-                    maxLength={3} 
-                    readOnly={isEditing}
-                    disabled={isEditing}
-                    className={isEditing ? "bg-muted cursor-not-allowed" : ""}
-                    {...field} 
-                  />
-                </FormControl>
-                <FormMessage />
-                {!isEditing && (
-                  <p className="text-xs text-muted-foreground">
-                    Informe um código de 3 dígitos. Após salvar, não poderá ser alterado.
-                  </p>
-                )}
-                {isEditing && (
-                  <p className="text-xs text-muted-foreground">
-                    O código não pode ser alterado
-                  </p>
-                )}
-              </FormItem>
-            )}
-          />
+          <div className="grid grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="codigo"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Código</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Código"
+                      maxLength={3}
+                      readOnly={isEditing}
+                      disabled={isEditing}
+                      className={isEditing ? "bg-muted cursor-not-allowed" : ""}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="ano"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Ano</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Ano"
+                      maxLength={4}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
           <FormField
             control={form.control}
             name="name"
@@ -192,43 +215,83 @@ const UpsertEscolaForm = ({
               </FormItem>
             )}
           />
-          <FormField
-            control={form.control}
-            name="representante"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Representante</FormLabel>
-                <Select
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione um representante" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      <SelectLabel>Representantes</SelectLabel>
-                      {representantes && representantes.length > 0 ? (
-                        representantes.map((representante) => (
-                          <SelectItem
-                            key={representante.id}
-                            value={representante.id}
-                          >
-                            {representante.name}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="representante"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Representante</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione um representante" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        <SelectLabel>Representantes</SelectLabel>
+                        {representantes && representantes.length > 0 ? (
+                          representantes.map((representante) => (
+                            <SelectItem
+                              key={representante.id}
+                              value={representante.id}
+                            >
+                              {representante.name}
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <SelectItem value="" disabled>
+                            Nenhum representante encontrado
                           </SelectItem>
-                        ))
-                      ) : (
-                        <SelectItem value="" disabled>
-                          Nenhum representante encontrado
-                        </SelectItem>
-                      )}
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+                        )}
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="pacoteId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Pacote</FormLabel>
+                  <Select
+                    onValueChange={(value) =>
+                      field.onChange(value === "none" ? "" : value)
+                    }
+                    value={field.value && field.value !== "" ? field.value : "none"}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Nenhum pacote selecionado" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        <SelectLabel>Pacotes</SelectLabel>
+                        <SelectItem value="none">Nenhum</SelectItem>
+                        {pacotes && pacotes.length > 0 ? (
+                          pacotes.map((pacote) => (
+                            <SelectItem key={pacote.id} value={pacote.id}>
+                              {pacote.name}
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <SelectItem value="__empty" disabled>
+                            Nenhum pacote cadastrado
+                          </SelectItem>
+                        )}
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
 
           <DialogFooter>
             <Button type="submit" disabled={upsertEscolaAction.isPending}>

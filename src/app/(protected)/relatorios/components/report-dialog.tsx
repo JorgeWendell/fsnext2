@@ -55,10 +55,11 @@ const ReportDialog = ({ aluno, finances, escolas, extras }: Props) => {
   const valorAlbum = parseFloat(aluno.valor_album || "0");
   const valorColacao = parseFloat(aluno.valor_colacao || "0");
   const valorBaile = parseFloat(aluno.valor_baile || "0");
-  const valorConviteExtra = parseFloat(aluno.valor_convite_extra || "0");
+  const valorConviteInteira = parseFloat(aluno.valor_convite_inteira || "0");
+  const valorConviteMeia = parseFloat(aluno.valor_convite_meia || "0");
 
   const totalItensAluno =
-    valorAlbum + valorColacao + valorBaile + valorConviteExtra;
+    valorAlbum + valorColacao + valorBaile + valorConviteInteira + valorConviteMeia;
   const escolaName = escolas.find((e) => e.id === aluno.escola)?.name ?? "-";
 
   const alunoExtras = extras.filter((e) => e.alunoId === aluno.id);
@@ -107,7 +108,8 @@ const ReportDialog = ({ aluno, finances, escolas, extras }: Props) => {
     }
 
     // Criar linha de dados do aluno
-    const monthBody = [];
+    const monthBody: string[] = [];
+    const monthTotals: number[] = [];
     for (let i = 0; i < monthsCount; i++) {
       const ref = addMonths(firstDate, i);
       const refMonth = ref.getMonth();
@@ -172,13 +174,14 @@ const ReportDialog = ({ aluno, finances, escolas, extras }: Props) => {
       } else {
         monthBody.push("");
       }
+      monthTotals.push(monthTotal);
     }
 
     // Adicionar o total do aluno na primeira coluna
     monthBody.unshift(currency(totalItensAluno).replace("R$", "").trim());
 
-    // Calcular total geral (usar total dos itens do aluno)
-    const totalGeral = totalItensAluno;
+    // Calcular subtotal de valores pagos nos meses
+    const subtotalPagos = monthTotals.reduce((acc, v) => acc + v, 0);
 
     const startY = finalY;
     autoTable(doc, {
@@ -199,7 +202,16 @@ const ReportDialog = ({ aluno, finances, escolas, extras }: Props) => {
     const tableEndY =
       (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable
         .finalY + 10;
-    doc.text(`Total Geral: ${currency(totalGeral)}`, 14, tableEndY);
+    doc.text(
+      `Subtotal pagos (meses): ${currency(subtotalPagos)}`,
+      14,
+      tableEndY
+    );
+    doc.text(
+      `Total dos produtos do aluno: ${currency(totalItensAluno)}`,
+      14,
+      tableEndY + 6
+    );
 
     // Adicionar seção "Itens Adquiridos"
     let currentY = tableEndY + 16;
@@ -216,8 +228,14 @@ const ReportDialog = ({ aluno, finances, escolas, extras }: Props) => {
     if (aluno.colacao)
       itensAdquiridos.push(`Colação: ${currency(valorColacao)}`);
     if (aluno.baile) itensAdquiridos.push(`Baile: ${currency(valorBaile)}`);
-    if (aluno.convite_extra)
-      itensAdquiridos.push(`Convite Extra: ${currency(valorConviteExtra)}`);
+    if (aluno.convite_inteira) {
+      itensAdquiridos.push(
+        `Convite Inteira: ${currency(valorConviteInteira)}`
+      );
+    }
+    if (aluno.convite_meia) {
+      itensAdquiridos.push(`Convite Meia: ${currency(valorConviteMeia)}`);
+    }
 
     alunoExtras.forEach((extra) => {
       const label =
@@ -266,7 +284,7 @@ const ReportDialog = ({ aluno, finances, escolas, extras }: Props) => {
 
       <div className="mb-4">
         <h3 className="text-lg font-semibold mb-3">Produtos Adquiridos</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           <div
             className={`p-3 rounded-lg border ${aluno.album ? "bg-green-50 border-green-200" : "bg-gray-50 border-gray-200"}`}
           >
@@ -316,19 +334,37 @@ const ReportDialog = ({ aluno, finances, escolas, extras }: Props) => {
           </div>
 
           <div
-            className={`p-3 rounded-lg border ${aluno.convite_extra ? "bg-green-50 border-green-200" : "bg-gray-50 border-gray-200"}`}
+            className={`p-3 rounded-lg border ${aluno.convite_inteira ? "bg-green-50 border-green-200" : "bg-gray-50 border-gray-200"}`}
           >
             <div className="flex items-center justify-between">
               <div>
-                <div className="font-medium">Convite Extra</div>
+                <div className="font-medium">Convite Inteira</div>
                 <div className="text-sm text-muted-foreground">
-                  {aluno.convite_extra
-                    ? currency(valorConviteExtra)
+                  {aluno.convite_inteira
+                    ? currency(valorConviteInteira)
                     : "Não adquirido"}
                 </div>
               </div>
               <div
-                className={`w-3 h-3 rounded-full ${aluno.convite_extra ? "bg-green-500" : "bg-gray-300"}`}
+                className={`w-3 h-3 rounded-full ${aluno.convite_inteira ? "bg-green-500" : "bg-gray-300"}`}
+              ></div>
+            </div>
+          </div>
+
+          <div
+            className={`p-3 rounded-lg border ${aluno.convite_meia ? "bg-green-50 border-green-200" : "bg-gray-50 border-gray-200"}`}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="font-medium">Convite Meia</div>
+                <div className="text-sm text-muted-foreground">
+                  {aluno.convite_meia
+                    ? currency(valorConviteMeia)
+                    : "Não adquirido"}
+                </div>
+              </div>
+              <div
+                className={`w-3 h-3 rounded-full ${aluno.convite_meia ? "bg-green-500" : "bg-gray-300"}`}
               ></div>
             </div>
           </div>

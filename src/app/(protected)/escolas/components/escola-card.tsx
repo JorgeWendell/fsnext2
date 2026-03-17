@@ -21,7 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardFooter, CardHeader } from "@/components/ui/card";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
-import { escolasTable } from "@/db/schema";
+import { escolasTable, pacotesTable } from "@/db/schema";
 
 import UpsertEscolaForm from "./upsert-escola-form";
 
@@ -30,12 +30,15 @@ type Representante = {
   name: string;
 };
 
+type Pacote = typeof pacotesTable.$inferSelect;
+
 interface EscolaCardProps {
   escola: typeof escolasTable.$inferSelect;
   representantes: Representante[];
+  pacotes: Pacote[];
 }
 
-const EscolaCard = ({ escola, representantes }: EscolaCardProps) => {
+const EscolaCard = ({ escola, representantes, pacotes }: EscolaCardProps) => {
   const [isUpsertEscolaDialogOpen, setIsUpsertEscolaDialogOpen] =
     useState(false);
 
@@ -82,7 +85,7 @@ const EscolaCard = ({ escola, representantes }: EscolaCardProps) => {
           </Avatar>
           <div className="flex-1 min-w-0">
             <p className="text-xs text-muted-foreground font-medium">
-              Código: {escola.codigo}
+              Código: {escola.codigo}/{escola.ano ? escola.ano.slice(-2) : ""}
             </p>
             <h3 className="text-sm font-semibold mt-1 truncate">{escola.name}</h3>
             <p className="text-sm text-muted-foreground mt-0.5">
@@ -105,6 +108,7 @@ const EscolaCard = ({ escola, representantes }: EscolaCardProps) => {
           <UpsertEscolaForm
             escola={escola}
             representantes={representantes}
+            pacotes={pacotes}
             onSuccess={() => setIsUpsertEscolaDialogOpen(false)}
           />
         </Dialog>

@@ -72,8 +72,12 @@ export const escolasTable = pgTable("escolas", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),
   codigo: text("codigo").notNull(),
+  ano: text("ano"),
   address: text("address"),
   phone: text("phone"),
+  pacoteId: uuid("pacote_id").references(() => pacotesTable.id, {
+    onDelete: "set null",
+  }),
   representanteId: uuid("representanteId")
     .notNull()
     .references(() => representantesTable.id, { onDelete: "cascade" }),
@@ -88,7 +92,7 @@ export const representanteRelations = relations(
   representantesTable,
   ({ many }) => ({
     escolas: many(escolasTable),
-  })
+  }),
 );
 
 export const escolaRelations = relations(escolasTable, ({ many }) => ({
@@ -122,8 +126,10 @@ export const alunosTable = pgTable("alunos", {
   valor_colacao: text("valor_colacao"),
   baile: boolean("baile").notNull().default(false),
   valor_baile: text("valor_baile"),
-  convite_extra: boolean("convite_extra").notNull().default(false),
-  valor_convite_extra: text("valor_convite_extra"),
+  convite_inteira: boolean("convite_inteira").notNull().default(false),
+  valor_convite_inteira: text("valor_convite_inteira"),
+  convite_meia: boolean("convite_meia").notNull().default(false),
+  valor_convite_meia: text("valor_convite_meia"),
   active: boolean("active").notNull().default(true),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updateAt: timestamp("update_at")
@@ -198,9 +204,26 @@ export const alunoExtrasTable = pgTable("aluno_extras", {
     .references(() => alunosTable.id, { onDelete: "cascade" }),
   type: text("type").notNull(),
   total: text("total").notNull(),
+  quantity: text("quantity"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   paid: boolean("paid").notNull().default(false),
   paidMethod: text("paid_method"),
   paidAt: timestamp("paid_at"),
 });
 
+export const pacotesTable = pgTable("pacotes", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name").notNull(),
+  colacao: text("colacao"),
+  baile: text("baile"),
+  album: text("album"),
+  conviteInteira: text("convite_inteira"),
+  conviteMeia: text("convite_meia"),
+  conviteExtraInteira: text("convite_extra_inteira"),
+  conviteExtraMeia: text("convite_extra_meia"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updateAt: timestamp("update_at")
+    .notNull()
+    .defaultNow()
+    .$onUpdate(() => new Date()),
+});

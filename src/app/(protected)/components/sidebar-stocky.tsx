@@ -60,6 +60,11 @@ const navigationItems: NavItem[] = [
     icon: Settings,
   },
   {
+    name: "Configurações",
+    href: "/configuracoes",
+    icon: Settings,
+  },
+  {
     name: "Suporte",
     href: "/suporte",
     icon: HelpCircle,
@@ -88,7 +93,7 @@ export const SidebarStocky = () => {
       <nav className="flex flex-1 flex-col px-4 py-6">
         <div className="space-y-1">
           {navigationItems
-            .filter((item) => item.href !== "/suporte")
+            .filter((item) => item.href !== "/suporte" && item.href !== "/configuracoes")
             .map((item) => {
               const navItem = item as NavItem;
               const isActive = pathname === navItem.href;
@@ -114,7 +119,10 @@ export const SidebarStocky = () => {
 
         <div className="mt-auto border-t border-slate-200 pt-4 dark:border-slate-800">
           {navigationItems
-            .filter((item) => item.href === "/suporte")
+            .filter(
+              (item) =>
+                item.href === "/configuracoes" || item.href === "/suporte",
+            )
             .map((item) => {
               const navItem = item as NavItem;
               const isActive = pathname === navItem.href;

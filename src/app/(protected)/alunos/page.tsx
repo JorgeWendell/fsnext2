@@ -12,7 +12,7 @@ import {
   PageTitle,
 } from "@/components/ui/page-container";
 import { db } from "@/db";
-import { alunoExtrasTable, alunosTable, escolasTable } from "@/db/schema";
+import { alunoExtrasTable, alunosTable, escolasTable, pacotesTable } from "@/db/schema";
 import { auth } from "@/lib/auth";
 
 import AddAlunoButton from "./components/add-aluno-button";
@@ -29,6 +29,7 @@ const AlunosPage = async () => {
   let alunos: typeof alunosTable.$inferSelect[] = [];
   let escolas: typeof escolasTable.$inferSelect[] = [];
   let extras: typeof alunoExtrasTable.$inferSelect[] = [];
+  let pacotes: typeof pacotesTable.$inferSelect[] = [];
 
   try {
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
@@ -42,16 +43,18 @@ const AlunosPage = async () => {
         ),
       );
 
-    [alunos, escolas, extras] = await Promise.all([
+    [alunos, escolas, extras, pacotes] = await Promise.all([
       db.query.alunosTable.findMany(),
       db.select().from(escolasTable),
       db
         .select()
         .from(alunoExtrasTable)
         .where(eq(alunoExtrasTable.paid, true)),
+      db.select().from(pacotesTable),
     ]);
     if (!Array.isArray(escolas)) escolas = [];
     if (!Array.isArray(extras)) extras = [];
+    if (!Array.isArray(pacotes)) pacotes = [];
   } catch (error) {
     console.error("Erro ao buscar dados:", error);
     alunos = [];
@@ -60,6 +63,7 @@ const AlunosPage = async () => {
   }
 
   const escolasArray = Array.isArray(escolas) ? escolas : [];
+  const pacotesArray = Array.isArray(pacotes) ? pacotes : [];
  
   
  
@@ -72,11 +76,16 @@ const AlunosPage = async () => {
           <PageDescription>Gerencie seus alunos</PageDescription>
         </PageHeaderContent>
         <PageActions>
-          <AddAlunoButton escolas={escolasArray} />
+          <AddAlunoButton escolas={escolasArray} pacotes={pacotesArray} />
         </PageActions>
       </PageHeader>
       <PageContent>
-        <AlunosWithSearch alunos={alunos} escolas={escolasArray} extras={extras} />
+        <AlunosWithSearch
+          alunos={alunos}
+          escolas={escolasArray}
+          extras={extras}
+          pacotes={pacotesArray}
+        />
       </PageContent>
     </PageContainer>
   );

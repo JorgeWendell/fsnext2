@@ -20,17 +20,22 @@ export const upsertEscola = actionClient
       throw new Error("Unauthorized");
     }
 
+    const { representante, pacoteId, ...rest } = parsedInput;
+
     await db
       .insert(escolasTable)
       .values({
         id: parsedInput.id,
-        representanteId: parsedInput.representante,
-        ...parsedInput,
+        representanteId: representante,
+        pacoteId: pacoteId || null,
+        ...rest,
       })
       .onConflictDoUpdate({
         target: escolasTable.id,
         set: {
-          ...parsedInput,
+          ...rest,
+          representanteId: representante,
+          pacoteId: pacoteId || null,
         },
       });
     revalidatePath("/escolas");

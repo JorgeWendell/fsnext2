@@ -26,32 +26,37 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { alunoExtrasTable, alunosTable } from "@/db/schema";
+import { alunoExtrasTable, alunosTable, pacotesTable } from "@/db/schema";
 
 import UpsertAlunoForm from "./upsert-aluno-form";
 
 type Escola = {
   id: string;
   name: string;
+  pacoteId?: string | null;
 };
+
+type Pacote = typeof pacotesTable.$inferSelect;
 
 interface AlunosTableProps {
   alunos: (typeof alunosTable.$inferSelect)[];
   escolas: Escola[];
   extras?: typeof alunoExtrasTable.$inferSelect[];
+  pacotes: Pacote[];
 }
 
-const AlunosTable = ({ alunos, escolas, extras = [] }: AlunosTableProps) => {
+const AlunosTable = ({
+  alunos,
+  escolas,
+  extras = [],
+  pacotes,
+}: AlunosTableProps) => {
   const [editingAluno, setEditingAluno] = useState<
     typeof alunosTable.$inferSelect | null
   >(null);
   const getEscolaName = (escolaId: string) => {
     const escola = escolas.find((e) => e.id === escolaId);
     return escola?.name || "Escola não encontrada";
-  };
-
-  const formatSex = (sex: string) => {
-    return sex === "male" ? "Masculino" : "Feminino";
   };
 
   const deleteAlunoAction = useAction(deleteAluno, {
@@ -86,11 +91,11 @@ const AlunosTable = ({ alunos, escolas, extras = [] }: AlunosTableProps) => {
                 <TableHead className="min-w-[150px]">Nome</TableHead>
                 <TableHead className="min-w-[100px] hidden md:table-cell">Classe</TableHead>
                 <TableHead className="min-w-[120px] hidden lg:table-cell">Escola</TableHead>
-                <TableHead className="min-w-[80px] hidden sm:table-cell">Sexo</TableHead>
                 <TableHead className="min-w-[80px] hidden md:table-cell">Álbum</TableHead>
                 <TableHead className="min-w-[80px] hidden md:table-cell">Colação</TableHead>
                 <TableHead className="min-w-[80px] hidden md:table-cell">Baile</TableHead>
-                <TableHead className="min-w-[100px] hidden lg:table-cell">Convite Extra</TableHead>
+                <TableHead className="min-w-[100px] hidden lg:table-cell">Convite inteira</TableHead>
+                <TableHead className="min-w-[100px] hidden lg:table-cell">Convite Meia</TableHead>
                 <TableHead className="min-w-[100px] hidden lg:table-cell">Obs</TableHead>
                 <TableHead className="text-right min-w-[100px]">Ações</TableHead>
               </TableRow>
@@ -118,7 +123,7 @@ const AlunosTable = ({ alunos, escolas, extras = [] }: AlunosTableProps) => {
                     <div className="flex flex-col">
                       <span>{aluno.name}</span>
                       <span className="text-xs text-muted-foreground md:hidden">
-                        {aluno.class} • {formatSex(aluno.sex)}
+                        {aluno.class}
                       </span>
                     </div>
                   </TableCell>
@@ -127,9 +132,6 @@ const AlunosTable = ({ alunos, escolas, extras = [] }: AlunosTableProps) => {
                   </TableCell>
                   <TableCell className="hidden lg:table-cell">
                     {getEscolaName(aluno.escola)}
-                  </TableCell>
-                  <TableCell className="hidden sm:table-cell">
-                    {formatSex(aluno.sex)}
                   </TableCell>
                 <TableCell className="hidden md:table-cell">
                   {(
@@ -236,27 +238,61 @@ const AlunosTable = ({ alunos, escolas, extras = [] }: AlunosTableProps) => {
                 <TableCell className="hidden lg:table-cell">
                   {(
                     aluno as typeof alunosTable.$inferSelect & {
-                      convite_extra?: boolean;
-                      valor_convite_extra?: string;
+                      convite_inteira?: boolean;
+                      valor_convite_inteira?: string;
                     }
-                    )?.convite_extra ? (
+                  )?.convite_inteira ? (
                     <div>
                       <div>Sim</div>
                       {(
                         aluno as typeof alunosTable.$inferSelect & {
-                          convite_extra?: boolean;
-                          valor_convite_extra?: string;
+                          convite_inteira?: boolean;
+                          valor_convite_inteira?: string;
                         }
-                      )?.valor_convite_extra && (
+                      )?.valor_convite_inteira && (
                         <div className="text-xs text-muted-foreground">
                           R${" "}
                           {parseFloat(
                             (
                               aluno as typeof alunosTable.$inferSelect & {
-                                convite_extra?: boolean;
-                                valor_convite_extra?: string;
+                                convite_inteira?: boolean;
+                                valor_convite_inteira?: string;
                               }
-                            ).valor_convite_extra || "0"
+                            ).valor_convite_inteira || "0"
+                          )
+                            .toFixed(2)
+                            .replace(".", ",")}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    "Não"
+                  )}
+                </TableCell>
+                <TableCell className="hidden lg:table-cell">
+                  {(
+                    aluno as typeof alunosTable.$inferSelect & {
+                      convite_meia?: boolean;
+                      valor_convite_meia?: string;
+                    }
+                  )?.convite_meia ? (
+                    <div>
+                      <div>Sim</div>
+                      {(
+                        aluno as typeof alunosTable.$inferSelect & {
+                          convite_meia?: boolean;
+                          valor_convite_meia?: string;
+                        }
+                      )?.valor_convite_meia && (
+                        <div className="text-xs text-muted-foreground">
+                          R${" "}
+                          {parseFloat(
+                            (
+                              aluno as typeof alunosTable.$inferSelect & {
+                                convite_meia?: boolean;
+                                valor_convite_meia?: string;
+                              }
+                            ).valor_convite_meia || "0"
                           )
                             .toFixed(2)
                             .replace(".", ",")}
@@ -294,15 +330,22 @@ const AlunosTable = ({ alunos, escolas, extras = [] }: AlunosTableProps) => {
                                 key={extra.id}
                                 className="flex items-center justify-between rounded border px-3 py-2"
                               >
-                                <span>
-                                  {extra.type === "album"
-                                    ? "Álbum"
-                                    : extra.type === "convite_extra"
-                                      ? "Convite extra"
-                                      : extra.type}
-                                </span>
+                                <div className="flex flex-col">
+                                  <span>
+                                    {extra.type === "album"
+                                      ? "Álbum"
+                                      : extra.type === "convite_extra"
+                                        ? "Convite extra"
+                                        : extra.type}
+                                  </span>
+                                  {extra.quantity && (
+                                    <span className="text-xs text-muted-foreground">
+                                      Qtd: {extra.quantity}
+                                    </span>
+                                  )}
+                                </div>
                                 <span className="font-semibold">
-                                  R${" "}
+                                  R{" "}
                                   {parseFloat(extra.total || "0")
                                     .toFixed(2)
                                     .replace(".", ",")}
@@ -331,6 +374,7 @@ const AlunosTable = ({ alunos, escolas, extras = [] }: AlunosTableProps) => {
                           <UpsertAlunoForm
                             aluno={editingAluno}
                             escolas={escolas}
+                            pacotes={pacotes}
                             onSuccess={handleCloseEditDialog}
                           />
                         )}

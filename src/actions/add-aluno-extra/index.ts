@@ -24,6 +24,7 @@ export const addAlunoExtra = actionClient
       alunoId: parsedInput.alunoId,
       type: parsedInput.type,
       total: parsedInput.total,
+      quantity: String(parsedInput.quantity ?? 1),
     });
 
     revalidatePath("/alunos");

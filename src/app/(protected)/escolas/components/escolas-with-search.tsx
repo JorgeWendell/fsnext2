@@ -12,7 +12,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import { escolasTable } from "@/db/schema";
+import { escolasTable, pacotesTable } from "@/db/schema";
 
 import EscolaCard from "./escola-card";
 
@@ -21,12 +21,19 @@ type Representante = {
   name: string;
 };
 
+type Pacote = typeof pacotesTable.$inferSelect;
+
 interface EscolasWithSearchProps {
   escolas: typeof escolasTable.$inferSelect[];
   representantes: Representante[];
+  pacotes: Pacote[];
 }
 
-const EscolasWithSearch = ({ escolas, representantes }: EscolasWithSearchProps) => {
+const EscolasWithSearch = ({
+  escolas,
+  representantes,
+  pacotes,
+}: EscolasWithSearchProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 15;
@@ -118,6 +125,7 @@ const EscolasWithSearch = ({ escolas, representantes }: EscolasWithSearchProps) 
                 key={escola.id}
                 escola={escola}
                 representantes={representantes}
+                pacotes={pacotes}
               />
             ))}
           </div>

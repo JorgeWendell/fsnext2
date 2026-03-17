@@ -1,12 +1,12 @@
 "use client";
 
-/* eslint-disable simple-import-sort/imports */
-
 import { Plus } from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
+import { pacotesTable } from "@/db/schema";
+
 import UpsertAlunoForm from "./upsert-aluno-form";
 
 interface AddAlunoButtonProps {
@@ -14,9 +14,10 @@ interface AddAlunoButtonProps {
     id: string;
     name: string;
   }>;
+  pacotes: Array<typeof pacotesTable.$inferSelect>;
 }
 
-const AddAlunoButton = ({ escolas }: AddAlunoButtonProps) => {
+const AddAlunoButton = ({ escolas, pacotes }: AddAlunoButtonProps) => {
   const [isOpen, setIsOpen] = useState(false);
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -27,9 +28,10 @@ const AddAlunoButton = ({ escolas }: AddAlunoButtonProps) => {
           <span className="sm:hidden">Adicionar</span>
         </Button>
       </DialogTrigger>
-      <UpsertAlunoForm 
-        onSuccess={() => setIsOpen(false)} 
+      <UpsertAlunoForm
+        onSuccess={() => setIsOpen(false)}
         escolas={escolas}
+        pacotes={pacotes}
       />
     </Dialog>
   );

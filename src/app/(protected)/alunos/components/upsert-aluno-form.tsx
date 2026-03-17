@@ -48,7 +48,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { alunosTable } from "@/db/schema";
+import { alunosTable, pacotesTable } from "@/db/schema";
 import { validatePhone } from "@/lib/validations";
 
 const formSchema = z
@@ -80,63 +80,28 @@ const formSchema = z
     valor_colacao: z.string().optional(),
     baile: z.boolean().optional(),
     valor_baile: z.string().optional(),
-    convite_extra: z.boolean().optional(),
-    valor_convite_extra: z.string().optional(),
-  })
-  .refine(
-    (data) => {
-      if (data.album) {
-        return !!data.valor_album && data.valor_album.trim() !== "";
-      }
-      return true;
-    },
-    { path: ["valor_album"], message: "Informe o valor do álbum" },
-  )
-  .refine(
-    (data) => {
-      if (data.colacao) {
-        return !!data.valor_colacao && data.valor_colacao.trim() !== "";
-      }
-      return true;
-    },
-    { path: ["valor_colacao"], message: "Informe o valor da colação" },
-  )
-  .refine(
-    (data) => {
-      if (data.baile) {
-        return !!data.valor_baile && data.valor_baile.trim() !== "";
-      }
-      return true;
-    },
-    { path: ["valor_baile"], message: "Informe o valor do baile" },
-  )
-  .refine(
-    (data) => {
-      if (data.convite_extra) {
-        return (
-          !!data.valor_convite_extra && data.valor_convite_extra.trim() !== ""
-        );
-      }
-      return true;
-    },
-    {
-      path: ["valor_convite_extra"],
-      message: "Informe o valor do convite extra",
-    },
-  );
+    convite_inteira: z.boolean().optional(),
+    valor_convite_inteira: z.string().optional(),
+    convite_meia: z.boolean().optional(),
+    valor_convite_meia: z.string().optional(),
+  });
 
 type FormSchema = z.infer<typeof formSchema>;
 
 type Escola = {
   id: string;
   name: string;
+  pacoteId?: string | null;
 };
+
+type Pacote = typeof pacotesTable.$inferSelect;
 
 interface UpsertAlunoFormProps {
   aluno?: typeof alunosTable.$inferSelect;
   onSuccess?: () => void;
   escolas: Escola[];
   financeOpenByDefault?: boolean;
+  pacotes?: Pacote[];
 }
 
 const UpsertAlunoForm = ({
@@ -144,17 +109,26 @@ const UpsertAlunoForm = ({
   onSuccess,
   escolas = [],
   financeOpenByDefault = false,
+  pacotes = [],
 }: UpsertAlunoFormProps) => {
   const [isFinanceOpen, setIsFinanceOpen] =
     React.useState<boolean>(financeOpenByDefault);
   const [isExtrasOpen, setIsExtrasOpen] = React.useState(false);
   const [extraAlbum, setExtraAlbum] = React.useState(false);
-  const [extraConvite, setExtraConvite] = React.useState(false);
-  const [extraValue, setExtraValue] = React.useState("");
+  const [extraConviteInteira, setExtraConviteInteira] =
+    React.useState(false);
+  const [extraConviteMeia, setExtraConviteMeia] = React.useState(false);
+  const [extraAlbumValue, setExtraAlbumValue] = React.useState("");
+  const [extraConviteInteiraValue, setExtraConviteInteiraValue] =
+    React.useState("");
+  const [extraConviteInteiraQty, setExtraConviteInteiraQty] =
+    React.useState(1);
+  const [extraConviteMeiaValue, setExtraConviteMeiaValue] =
+    React.useState("");
+  const [extraConviteMeiaQty, setExtraConviteMeiaQty] = React.useState(1);
   const isEditing = !!aluno;
 
   const form = useForm<FormSchema>({
-    shouldUnregister: true,
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: aluno?.name ?? "",
@@ -171,17 +145,29 @@ const UpsertAlunoForm = ({
       valor_colacao: aluno?.valor_colacao ?? "",
       baile: aluno?.baile ?? false,
       valor_baile: aluno?.valor_baile ?? "",
-      convite_extra: aluno?.convite_extra ?? false,
-      valor_convite_extra: aluno?.valor_convite_extra ?? "",
+      convite_inteira: aluno?.convite_inteira ?? false,
+      valor_convite_inteira: aluno?.valor_convite_inteira ?? "",
+      convite_meia:
+        (aluno as typeof alunosTable.$inferSelect & { convite_meia?: boolean })
+          ?.convite_meia ?? false,
+      valor_convite_meia:
+        (aluno as typeof alunosTable.$inferSelect & {
+          valor_convite_meia?: string;
+        })?.valor_convite_meia ?? "",
     },
   });
+
+  const escolaSelecionadaId = form.watch("escola");
+  const escolaSelecionada = escolas.find((e) => e.id === escolaSelecionadaId);
+  const hasPacoteForCurrentEscola =
+    !!escolaSelecionada?.pacoteId &&
+    pacotes.some((p) => p.id === escolaSelecionada.pacoteId);
 
   const upsertAlunoAction = useAction(upsertAluno, {
     onSuccess: () => {
       toast.success("Aluno adicionado com sucesso");
       setIsFinanceOpen(false);
       onSuccess?.();
-      form.reset();
     },
     onError: () => {
       toast.error("Erro ao adicionar Aluno");
@@ -192,8 +178,11 @@ const UpsertAlunoForm = ({
     onSuccess: () => {
       toast.success("Item extra salvo com sucesso");
       setExtraAlbum(false);
-      setExtraConvite(false);
-      setExtraValue("");
+      setExtraConviteInteira(false);
+      setExtraConviteMeia(false);
+      setExtraAlbumValue("");
+      setExtraConviteInteiraValue("");
+      setExtraConviteMeiaValue("");
       setIsExtrasOpen(false);
     },
     onError: () => {
@@ -212,17 +201,30 @@ const UpsertAlunoForm = ({
     }).format(reais);
   };
 
-  const handleExtraValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const raw = e.target.value;
-    const onlyDigits = raw.replace(/\D/g, "");
-    if (!onlyDigits) {
-      setExtraValue("");
-      return;
+  const applyPacoteFinanceValues = React.useCallback(() => {
+    const escolaId = form.getValues("escola");
+    if (!escolaId) return;
+    const escola = escolas.find((e) => e.id === escolaId);
+    if (!escola?.pacoteId) return;
+    const pacote = pacotes.find((p) => p.id === escola.pacoteId);
+    if (!pacote) return;
+
+    if (form.getValues("album") && pacote.album) {
+      form.setValue("valor_album", pacote.album);
     }
-    const cents = parseInt(onlyDigits, 10);
-    const asNumberString = (cents / 100).toFixed(2);
-    setExtraValue(asNumberString);
-  };
+    if (form.getValues("colacao") && pacote.colacao) {
+      form.setValue("valor_colacao", pacote.colacao);
+    }
+    if (form.getValues("baile") && pacote.baile) {
+      form.setValue("valor_baile", pacote.baile);
+    }
+    if (form.getValues("convite_inteira") && pacote.conviteInteira) {
+      form.setValue("valor_convite_inteira", pacote.conviteInteira);
+    }
+    if (form.getValues("convite_meia") && pacote.conviteMeia) {
+      form.setValue("valor_convite_meia", pacote.conviteMeia);
+    }
+  }, [escolas, form, pacotes]);
 
   const handleAlbumValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value;
@@ -266,12 +268,12 @@ const UpsertAlunoForm = ({
     const raw = e.target.value;
     const onlyDigits = raw.replace(/\D/g, "");
     if (!onlyDigits) {
-      form.setValue("valor_convite_extra", "");
+      form.setValue("valor_convite_inteira", "");
       return;
     }
     const cents = parseInt(onlyDigits, 10);
     const asNumberString = (cents / 100).toFixed(2);
-    form.setValue("valor_convite_extra", asNumberString);
+    form.setValue("valor_convite_inteira", asNumberString);
   };
 
   const onSubmit = (values: FormSchema) => {
@@ -309,17 +311,6 @@ const UpsertAlunoForm = ({
                     />
                   </FormControl>
                   <FormMessage />
-                  {!isEditing && (
-                    <p className="text-xs text-muted-foreground">
-                      Informe um código de 3 dígitos. Após salvar, não poderá
-                      ser alterado.
-                    </p>
-                  )}
-                  {isEditing && (
-                    <p className="text-xs text-muted-foreground">
-                      O código não pode ser alterado
-                    </p>
-                  )}
                 </FormItem>
               )}
             />
@@ -476,7 +467,8 @@ const UpsertAlunoForm = ({
                     <AlertDialogHeader>
                       <AlertDialogTitle>Desativar contrato</AlertDialogTitle>
                       <AlertDialogDescription>
-                        Você está prestes a desativar esse contrato, tem certeza disso?
+                        Você está prestes a desativar esse contrato, tem certeza
+                        disso?
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -526,7 +518,11 @@ const UpsertAlunoForm = ({
                             <input
                               type="checkbox"
                               checked={Boolean(field.value)}
-                              onChange={(e) => field.onChange(e.target.checked)}
+                              onChange={(e) => {
+                                const checked = e.target.checked;
+                                field.onChange(checked);
+                                applyPacoteFinanceValues();
+                              }}
                               className="h-4 w-4 rounded border"
                             />
                           </FormControl>
@@ -549,7 +545,11 @@ const UpsertAlunoForm = ({
                                 value={
                                   field.value ? formatCurrency(field.value) : ""
                                 }
-                                onChange={handleAlbumValueChange}
+                                readOnly={hasPacoteForCurrentEscola}
+                                onChange={(e) => {
+                                  if (hasPacoteForCurrentEscola) return;
+                                  handleAlbumValueChange(e);
+                                }}
                               />
                             </FormControl>
                             <FormMessage />
@@ -567,7 +567,11 @@ const UpsertAlunoForm = ({
                             <input
                               type="checkbox"
                               checked={Boolean(field.value)}
-                              onChange={(e) => field.onChange(e.target.checked)}
+                              onChange={(e) => {
+                                const checked = e.target.checked;
+                                field.onChange(checked);
+                                applyPacoteFinanceValues();
+                              }}
                               className="h-4 w-4 rounded border"
                             />
                           </FormControl>
@@ -590,7 +594,11 @@ const UpsertAlunoForm = ({
                                 value={
                                   field.value ? formatCurrency(field.value) : ""
                                 }
-                                onChange={handleColacaoValueChange}
+                                readOnly={hasPacoteForCurrentEscola}
+                                onChange={(e) => {
+                                  if (hasPacoteForCurrentEscola) return;
+                                  handleColacaoValueChange(e);
+                                }}
                               />
                             </FormControl>
                             <FormMessage />
@@ -608,7 +616,11 @@ const UpsertAlunoForm = ({
                             <input
                               type="checkbox"
                               checked={Boolean(field.value)}
-                              onChange={(e) => field.onChange(e.target.checked)}
+                              onChange={(e) => {
+                                const checked = e.target.checked;
+                                field.onChange(checked);
+                                applyPacoteFinanceValues();
+                              }}
                               className="h-4 w-4 rounded border"
                             />
                           </FormControl>
@@ -631,7 +643,11 @@ const UpsertAlunoForm = ({
                                 value={
                                   field.value ? formatCurrency(field.value) : ""
                                 }
-                                onChange={handleBaileValueChange}
+                                readOnly={hasPacoteForCurrentEscola}
+                                onChange={(e) => {
+                                  if (hasPacoteForCurrentEscola) return;
+                                  handleBaileValueChange(e);
+                                }}
                               />
                             </FormControl>
                             <FormMessage />
@@ -642,37 +658,127 @@ const UpsertAlunoForm = ({
 
                     <FormField
                       control={form.control}
-                      name="convite_extra"
+                      name="convite_inteira"
                       render={({ field }) => (
                         <FormItem className="flex items-center space-x-2">
                           <FormControl>
                             <input
                               type="checkbox"
                               checked={Boolean(field.value)}
-                              onChange={(e) => field.onChange(e.target.checked)}
+                              onChange={(e) => {
+                                const checked = e.target.checked;
+                                field.onChange(checked);
+                                applyPacoteFinanceValues();
+                              }}
                               className="h-4 w-4 rounded border"
                             />
                           </FormControl>
-                          <FormLabel className="!mt-0">Convite Extra</FormLabel>
+                          <FormLabel className="!mt-0">
+                            Convite inteira
+                          </FormLabel>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
 
-                    {form.watch("convite_extra") && (
+                    {form.watch("convite_inteira") && (
                       <FormField
                         control={form.control}
-                        name="valor_convite_extra"
+                        name="valor_convite_inteira"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Valor do Convite Extra</FormLabel>
+                            <FormLabel>Valor do Convite inteira</FormLabel>
                             <FormControl>
                               <Input
                                 placeholder="R$ 0,00"
                                 value={
                                   field.value ? formatCurrency(field.value) : ""
                                 }
-                                onChange={handleConviteExtraValueChange}
+                                readOnly={hasPacoteForCurrentEscola}
+                                onChange={(e) => {
+                                  if (hasPacoteForCurrentEscola) return;
+                                  handleConviteExtraValueChange(e);
+                                }}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    )}
+
+                    <FormField
+                      control={form.control}
+                      name="convite_meia"
+                      render={({ field }) => (
+                        <FormItem className="flex items-center space-x-2">
+                          <FormControl>
+                            <input
+                              type="checkbox"
+                              checked={Boolean(field.value)}
+                              onChange={(e) => {
+                                const checked = e.target.checked;
+                                field.onChange(checked);
+
+                                if (checked) {
+                                  const escolaId = form.getValues("escola");
+                                  if (escolaId) {
+                                    const escola = escolas.find(
+                                      (es) => es.id === escolaId,
+                                    );
+                                    if (escola?.pacoteId) {
+                                      const pacote = pacotes.find(
+                                        (p) => p.id === escola.pacoteId,
+                                      );
+                                      if (pacote?.conviteMeia) {
+                                        form.setValue(
+                                          "valor_convite_meia",
+                                          pacote.conviteMeia,
+                                        );
+                                      }
+                                    }
+                                  }
+                                } else {
+                                  form.setValue("valor_convite_meia", "");
+                                }
+                              }}
+                              className="h-4 w-4 rounded border"
+                            />
+                          </FormControl>
+                          <FormLabel className="!mt-0">Convite Meia</FormLabel>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {form.watch("convite_meia") && (
+                      <FormField
+                        control={form.control}
+                        name="valor_convite_meia"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Valor do Convite Meia</FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="R$ 0,00"
+                                value={
+                                  field.value ? formatCurrency(field.value) : ""
+                                }
+                                readOnly={hasPacoteForCurrentEscola}
+                                onChange={(e) => {
+                                  if (hasPacoteForCurrentEscola) return;
+                                  const raw = e.target.value;
+                                  const onlyDigits = raw.replace(/\D/g, "");
+                                  if (!onlyDigits) {
+                                    field.onChange("");
+                                    return;
+                                  }
+                                  const cents = parseInt(onlyDigits, 10);
+                                  const asNumberString = (
+                                    cents / 100
+                                  ).toFixed(2);
+                                  field.onChange(asNumberString);
+                                }}
                               />
                             </FormControl>
                             <FormMessage />
@@ -682,7 +788,10 @@ const UpsertAlunoForm = ({
                     )}
 
                     <DialogFooter className="flex-col sm:flex-row gap-2 justify-end">
-                      <Dialog open={isExtrasOpen} onOpenChange={setIsExtrasOpen}>
+                      <Dialog
+                        open={isExtrasOpen}
+                        onOpenChange={setIsExtrasOpen}
+                      >
                         <DialogTrigger asChild>
                           <Button
                             type="button"
@@ -702,68 +811,346 @@ const UpsertAlunoForm = ({
                           </DialogHeader>
                           <div className="space-y-4">
                             <div className="space-y-2">
-                              <FormLabel>Itens</FormLabel>
-                              <div className="flex flex-col gap-2">
-                                <label className="flex items-center gap-2 text-sm">
-                                  <input
-                                    type="checkbox"
-                                    className="h-4 w-4 rounded border"
-                                    checked={extraAlbum}
-                                    onChange={(e) => setExtraAlbum(e.target.checked)}
-                                  />
-                                  <span>Álbum</span>
-                                </label>
-                                <label className="flex items-center gap-2 text-sm">
-                                  <input
-                                    type="checkbox"
-                                    className="h-4 w-4 rounded border"
-                                    checked={extraConvite}
-                                    onChange={(e) => setExtraConvite(e.target.checked)}
-                                  />
-                                  <span>Convite extra</span>
-                                </label>
+                              <FormLabel>Álbum extra</FormLabel>
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="checkbox"
+                                  className="h-4 w-4 rounded border"
+                                  checked={extraAlbum}
+                                  onChange={(e) => {
+                                    const checked = e.target.checked;
+                                    setExtraAlbum(checked);
+                                    if (checked && !extraAlbumValue) {
+                                      const escolaId = form.getValues("escola");
+                                      if (escolaId) {
+                                        const escola = escolas.find(
+                                          (es) => es.id === escolaId,
+                                        );
+                                        if (escola?.pacoteId) {
+                                          const pacote = pacotes.find(
+                                            (p) => p.id === escola.pacoteId,
+                                          );
+                                          if (pacote?.album) {
+                                            setExtraAlbumValue(pacote.album);
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }}
+                                />
+                                <span className="text-sm">
+                                  Incluir Álbum extra
+                                </span>
                               </div>
+                              {extraAlbum && (
+                                <div className="mt-2">
+                                  <Input
+                                    placeholder="Valor do Álbum extra - R$ 0,00"
+                                    value={
+                                      extraAlbumValue
+                                        ? formatCurrency(extraAlbumValue)
+                                        : ""
+                                    }
+                                    onChange={(e) => {
+                                      const raw = e.target.value;
+                                      const onlyDigits = raw.replace(/\D/g, "");
+                                      if (!onlyDigits) {
+                                        setExtraAlbumValue("");
+                                        return;
+                                      }
+                                      const cents = parseInt(onlyDigits, 10);
+                                      const asNumberString = (
+                                        cents / 100
+                                      ).toFixed(2);
+                                      setExtraAlbumValue(asNumberString);
+                                    }}
+                                  />
+                                </div>
+                              )}
                             </div>
 
                             <div className="space-y-2">
-                              <FormLabel>Valor total</FormLabel>
-                              <Input
-                                placeholder="R$ 0,00"
-                                value={
-                                  extraValue ? formatCurrency(extraValue) : ""
-                                }
-                                onChange={handleExtraValueChange}
-                              />
+                              <FormLabel>Convite Extra Inteira</FormLabel>
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="checkbox"
+                                  className="h-4 w-4 rounded border"
+                                  checked={extraConviteInteira}
+                                  onChange={(e) => {
+                                    const checked = e.target.checked;
+                                    setExtraConviteInteira(checked);
+                                    if (checked && !extraConviteInteiraValue) {
+                                      const escolaId = form.getValues("escola");
+                                      if (escolaId) {
+                                        const escola = escolas.find(
+                                          (es) => es.id === escolaId,
+                                        );
+                                        if (escola?.pacoteId) {
+                                          const pacote = pacotes.find(
+                                            (p) => p.id === escola.pacoteId,
+                                          );
+                                          if (pacote?.conviteInteira) {
+                                            setExtraConviteInteiraValue(
+                                              pacote.conviteInteira,
+                                            );
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }}
+                                />
+                                <span className="text-sm">
+                                  Incluir Convite Extra Inteira
+                                </span>
+                              </div>
+                              {extraConviteInteira && (
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
+                                  <Input
+                                    placeholder="Valor unitário - R$ 0,00"
+                                    value={
+                                      extraConviteInteiraValue
+                                        ? formatCurrency(
+                                            extraConviteInteiraValue,
+                                          )
+                                        : ""
+                                    }
+                                    onChange={(e) => {
+                                      const raw = e.target.value;
+                                      const onlyDigits =
+                                        raw.replace(/\D/g, "");
+                                      if (!onlyDigits) {
+                                        setExtraConviteInteiraValue("");
+                                        return;
+                                      }
+                                      const cents = parseInt(onlyDigits, 10);
+                                      const asNumberString = (
+                                        cents / 100
+                                      ).toFixed(2);
+                                      setExtraConviteInteiraValue(
+                                        asNumberString,
+                                      );
+                                    }}
+                                  />
+                                  <Input
+                                    type="number"
+                                    min={1}
+                                    value={extraConviteInteiraQty}
+                                    onChange={(e) => {
+                                      const qty = parseInt(
+                                        e.target.value || "1",
+                                        10,
+                                      );
+                                      setExtraConviteInteiraQty(
+                                        Number.isNaN(qty) || qty < 1 ? 1 : qty,
+                                      );
+                                    }}
+                                    placeholder="Qtd."
+                                  />
+                                  <Input
+                                    readOnly
+                                    value={
+                                      extraConviteInteiraValue
+                                        ? formatCurrency(
+                                            (
+                                              parseFloat(
+                                                extraConviteInteiraValue ||
+                                                  "0",
+                                              ) * extraConviteInteiraQty
+                                            ).toFixed(2),
+                                          )
+                                        : ""
+                                    }
+                                    placeholder="Total"
+                                  />
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="space-y-2">
+                              <FormLabel>Convite Extra Meia</FormLabel>
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="checkbox"
+                                  className="h-4 w-4 rounded border"
+                                  checked={extraConviteMeia}
+                                  onChange={(e) => {
+                                    const checked = e.target.checked;
+                                    setExtraConviteMeia(checked);
+                                    if (checked && !extraConviteMeiaValue) {
+                                      const escolaId = form.getValues("escola");
+                                      if (escolaId) {
+                                        const escola = escolas.find(
+                                          (es) => es.id === escolaId,
+                                        );
+                                        if (escola?.pacoteId) {
+                                          const pacote = pacotes.find(
+                                            (p) => p.id === escola.pacoteId,
+                                          );
+                                          if (pacote?.conviteMeia) {
+                                            setExtraConviteMeiaValue(
+                                              pacote.conviteMeia,
+                                            );
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }}
+                                />
+                                <span className="text-sm">
+                                  Incluir Convite Extra Meia
+                                </span>
+                              </div>
+                              {extraConviteMeia && (
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
+                                  <Input
+                                    placeholder="Valor unitário - R$ 0,00"
+                                    value={
+                                      extraConviteMeiaValue
+                                        ? formatCurrency(extraConviteMeiaValue)
+                                        : ""
+                                    }
+                                    onChange={(e) => {
+                                      const raw = e.target.value;
+                                      const onlyDigits =
+                                        raw.replace(/\D/g, "");
+                                      if (!onlyDigits) {
+                                        setExtraConviteMeiaValue("");
+                                        return;
+                                      }
+                                      const cents = parseInt(onlyDigits, 10);
+                                      const asNumberString = (
+                                        cents / 100
+                                      ).toFixed(2);
+                                      setExtraConviteMeiaValue(
+                                        asNumberString,
+                                      );
+                                    }}
+                                  />
+                                  <Input
+                                    type="number"
+                                    min={1}
+                                    value={extraConviteMeiaQty}
+                                    onChange={(e) => {
+                                      const qty = parseInt(
+                                        e.target.value || "1",
+                                        10,
+                                      );
+                                      setExtraConviteMeiaQty(
+                                        Number.isNaN(qty) || qty < 1 ? 1 : qty,
+                                      );
+                                    }}
+                                    placeholder="Qtd."
+                                  />
+                                  <Input
+                                    readOnly
+                                    value={
+                                      extraConviteMeiaValue
+                                        ? formatCurrency(
+                                            (
+                                              parseFloat(
+                                                extraConviteMeiaValue || "0",
+                                              ) * extraConviteMeiaQty
+                                            ).toFixed(2),
+                                          )
+                                        : ""
+                                    }
+                                    placeholder="Total"
+                                  />
+                                </div>
+                              )}
                             </div>
                             <DialogFooter className="flex-col sm:flex-row gap-2 justify-end">
                               <Button
                                 type="button"
                                 variant="outline"
                                 className="w-full sm:w-auto"
-                                disabled={addAlunoExtraAction.isPending || !aluno}
+                                disabled={addAlunoExtraAction.isPending}
                                 onClick={() => {
-                                  if (!aluno) return;
-                                  const total = extraValue.trim();
-                                  if (!total) {
-                                    toast.error("Informe o valor total do item extra");
+                                  if (!aluno) {
+                                    toast.error(
+                                      "Salve o aluno antes de adicionar itens extras.",
+                                    );
                                     return;
                                   }
-                                  if (!extraAlbum && !extraConvite) {
-                                    toast.error("Selecione pelo menos um item extra");
+
+                                  const anySelected =
+                                    extraAlbum ||
+                                    extraConviteInteira ||
+                                    extraConviteMeia;
+
+                                  if (!anySelected) {
+                                    toast.error(
+                                      "Selecione pelo menos um item extra",
+                                    );
                                     return;
                                   }
+
+                                  if (
+                                    extraAlbum &&
+                                    !extraAlbumValue.trim()
+                                  ) {
+                                    toast.error(
+                                      "Informe o valor do Álbum extra",
+                                    );
+                                    return;
+                                  }
+
+                                  if (
+                                    extraConviteInteira &&
+                                    !extraConviteInteiraValue.trim()
+                                  ) {
+                                    toast.error(
+                                      "Informe o valor do Convite Extra Inteira",
+                                    );
+                                    return;
+                                  }
+
+                                  if (
+                                    extraConviteMeia &&
+                                    !extraConviteMeiaValue.trim()
+                                  ) {
+                                    toast.error(
+                                      "Informe o valor do Convite Extra Meia",
+                                    );
+                                    return;
+                                  }
+
                                   if (extraAlbum) {
                                     addAlunoExtraAction.execute({
                                       alunoId: aluno.id,
                                       type: "album",
-                                      total,
+                                      total: extraAlbumValue.trim(),
+                                      quantity: 1,
                                     });
                                   }
-                                  if (extraConvite) {
+
+                                  if (extraConviteInteira) {
+                                    const unit = parseFloat(
+                                      extraConviteInteiraValue || "0",
+                                    );
+                                    const total = (
+                                      unit * extraConviteInteiraQty
+                                    ).toFixed(2);
                                     addAlunoExtraAction.execute({
                                       alunoId: aluno.id,
                                       type: "convite_extra",
                                       total,
+                                      quantity: extraConviteInteiraQty,
+                                    });
+                                  }
+
+                                  if (extraConviteMeia) {
+                                    const unit = parseFloat(
+                                      extraConviteMeiaValue || "0",
+                                    );
+                                    const total = (
+                                      unit * extraConviteMeiaQty
+                                    ).toFixed(2);
+                                    addAlunoExtraAction.execute({
+                                      alunoId: aluno.id,
+                                      type: "convite_extra",
+                                      total,
+                                      quantity: extraConviteMeiaQty,
                                     });
                                   }
                                 }}

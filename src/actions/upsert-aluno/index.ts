@@ -38,8 +38,10 @@ export const upsertAluno = actionClient
         valor_colacao: parsedInput.valor_colacao,
         baile: parsedInput.baile ?? false,
         valor_baile: parsedInput.valor_baile,
-        convite_extra: parsedInput.convite_extra ?? false,
-        valor_convite_extra: parsedInput.valor_convite_extra,
+        convite_inteira: parsedInput.convite_inteira ?? false,
+        valor_convite_inteira: parsedInput.valor_convite_inteira,
+        convite_meia: parsedInput.convite_meia ?? false,
+        valor_convite_meia: parsedInput.valor_convite_meia,
         active: parsedInput.active ?? true,
       })
       .onConflictDoUpdate({
@@ -59,8 +61,10 @@ export const upsertAluno = actionClient
           valor_colacao: parsedInput.valor_colacao,
           baile: parsedInput.baile ?? false,
           valor_baile: parsedInput.valor_baile,
-          convite_extra: parsedInput.convite_extra ?? false,
-          valor_convite_extra: parsedInput.valor_convite_extra,
+          convite_inteira: parsedInput.convite_inteira ?? false,
+          valor_convite_inteira: parsedInput.valor_convite_inteira,
+          convite_meia: parsedInput.convite_meia ?? false,
+          valor_convite_meia: parsedInput.valor_convite_meia,
           active: parsedInput.active ?? true,
         },
       });
