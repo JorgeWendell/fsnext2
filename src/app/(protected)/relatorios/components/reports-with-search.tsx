@@ -280,17 +280,20 @@ const ReportsWithSearch = ({ alunos, escolas, finances, extras }: Props) => {
 
   const handleExportClassPdf = () => {
     if (!selectedClass) return;
-    const alunosDaClasse = alunos.filter((a) => a.class === selectedClass);
+    const alunosDaClasse = alunos.filter(
+      (a) => a.class === selectedClass && a.escola === schoolId,
+    );
 
     const doc = new jsPDF("landscape");
 
     // Cabeçalho do relatório
     doc.setFontSize(12);
     doc.setFont("helvetica", "normal");
-    doc.text(`Classe: ${selectedClass}`, 14, 25);
+    doc.text(`Escola: ${getEscolaName(schoolId)}`, 14, 25);
+    doc.text(`Classe: ${selectedClass}`, 14, 40);
 
     // Espaçamento inicial para a tabela de meses
-    const finalY = 30;
+    const finalY = 45;
 
     // Pagamentos mês a mês por aluno (Mês 1 = mês do primeiro pagamento do aluno; Mês N = +N-1)
     const monthsCount = 12;
@@ -319,7 +322,6 @@ const ReportsWithSearch = ({ alunos, escolas, finances, extras }: Props) => {
 
       const row: (string | number)[] = [
         aluno.name,
-        getEscolaName(aluno.escola),
       ];
 
       const firstDateFinance = firstFinance
@@ -422,7 +424,7 @@ const ReportsWithSearch = ({ alunos, escolas, finances, extras }: Props) => {
     const firstAlunoWithPayments = monthBody.find(
       (item) => item.firstDate !== null
     );
-    let monthHeader = ["Aluno", "Escola"];
+    let monthHeader = ["Aluno"];
 
     if (firstAlunoWithPayments?.firstDate) {
       const firstDate = firstAlunoWithPayments.firstDate;
@@ -435,7 +437,6 @@ const ReportsWithSearch = ({ alunos, escolas, finances, extras }: Props) => {
       // Fallback se não houver pagamentos
       monthHeader = [
         "Aluno",
-        "Escola",
         ...Array.from({ length: monthsCount }, (_, i) => `Mês ${i + 1}`),
       ];
     }
@@ -450,7 +451,7 @@ const ReportsWithSearch = ({ alunos, escolas, finances, extras }: Props) => {
     monthBodyRows.forEach((row) => {
       let rowTotal = 0;
       for (let i = 0; i < monthsCount; i++) {
-        const value = row[i + 2]; // +2 porque os primeiros são "Aluno" e "Escola"
+        const value = row[i + 1]; // +1 porque os primeiros são apenas "Aluno"
         if (value && value !== "") {
           // Remover formatação de moeda e converter para número
           const numericValue = parseFloat(
@@ -486,7 +487,6 @@ const ReportsWithSearch = ({ alunos, escolas, finances, extras }: Props) => {
     // Criar linha de total
     const totalRow = [
       "TOTAL",
-      "",
       ...monthlyTotals.map((total) =>
         total > 0 ? currency(total).replace("R$", "").trim() : ""
       ),
@@ -511,7 +511,7 @@ const ReportsWithSearch = ({ alunos, escolas, finances, extras }: Props) => {
       margin: { top: 40, right: 14, bottom: 20, left: 14 },
       didParseCell: function (data) {
         // Aplicar negrito na última linha (total)
-        if (data.row.index === bodyWithSubtotal.length) {
+        if (data.row.index === bodyWithTotal.length - 1) {
           data.cell.styles.fontStyle = "bold";
         }
       },
