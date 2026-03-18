@@ -298,25 +298,48 @@ const ReportsWithSearch = ({ alunos, escolas, finances, extras }: Props) => {
     // Criar cabeçalhos dinâmicos baseados no primeiro pagamento de cada aluno
     const monthBody = alunosDaClasse.map((aluno) => {
       const alunoFinances = finances.filter((f) => f.alunoId === aluno.id);
-      // ordenar por data e pegar o primeiro pagamento
-      const first = alunoFinances
+      const alunoExtras = extras.filter(
+        (e) => e.alunoId === aluno.id && e.paid === true,
+      );
+
+      // ordenar por data e pegar o primeiro pagamento/extra
+      const firstFinance = alunoFinances
         .slice()
         .sort(
           (a, b) =>
-            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+        )[0];
+
+      const firstExtra = alunoExtras
+        .slice()
+        .sort(
+          (a, b) =>
+            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
         )[0];
 
       const row: (string | number)[] = [
         aluno.name,
         getEscolaName(aluno.escola),
       ];
-      if (!first) {
+
+      const firstDateFinance = firstFinance
+        ? new Date(firstFinance.createdAt)
+        : null;
+      const firstDateExtra = firstExtra ? new Date(firstExtra.createdAt) : null;
+
+      const firstDate =
+        firstDateFinance && firstDateExtra
+          ? firstDateFinance.getTime() <= firstDateExtra.getTime()
+            ? firstDateFinance
+            : firstDateExtra
+          : firstDateFinance || firstDateExtra;
+
+      if (!firstDate) {
         // sem pagamentos: preencher com vazio
         for (let i = 0; i < monthsCount; i++) row.push("");
         return { row: row as (string | number)[], firstDate: null };
       }
 
-      const firstDate = new Date(first.createdAt);
       for (let i = 0; i < monthsCount; i++) {
         const ref = addMonths(firstDate, i);
         const refMonth = ref.getMonth();
@@ -376,6 +399,16 @@ const ReportsWithSearch = ({ alunos, escolas, finances, extras }: Props) => {
               monthTotal += valorParcela;
             }
           }
+        });
+
+        // Somar itens extras pagos do mês (por data de criação)
+        const monthExtras = alunoExtras.filter((extra) => {
+          const d = new Date(extra.createdAt);
+          return d.getMonth() === refMonth && d.getFullYear() === refYear;
+        });
+
+        monthExtras.forEach((extra) => {
+          monthTotal += parseFloat(extra.total || "0") || 0;
         });
 
         row.push(

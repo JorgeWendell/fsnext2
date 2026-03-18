@@ -47,6 +47,7 @@ const upsertFinanceSchema = z.object({
   method: z.enum(["pix", "debit", "creditvista", "creditparc", "bank_slip"]),
   bank_slip: z.enum(["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]).optional(),
   valueTotal: z.string().min(1, "Valor é obrigatório"),
+  discount: z.string().optional(),
   firstDueDate: z.string().optional(),
   alunoId: z.string().min(1, "Aluno é obrigatório"),
 });
@@ -58,6 +59,14 @@ const UpsertFinanceForm = ({ finance, alunoId, onSuccess, defaultValueTotal }: U
   const [selectedMethod, setSelectedMethod] = useState<string>("");
   const [firstDueDate, setFirstDueDate] = useState<string>("");
 
+  const initialDiscountNumber =
+    parseFloat(finance?.discount || "0") || 0;
+  const initialNetNumber =
+    parseFloat(finance?.valueTotal || defaultValueTotal || "0") || 0;
+  const [grossValueTotalNumber, setGrossValueTotalNumber] = useState<number>(
+    initialNetNumber + initialDiscountNumber,
+  );
+
   const form = useForm<UpsertFinanceInput>({
     resolver: zodResolver(upsertFinanceSchema),
     defaultValues: {
@@ -65,6 +74,7 @@ const UpsertFinanceForm = ({ finance, alunoId, onSuccess, defaultValueTotal }: U
       method: finance?.method || "pix",
       bank_slip: finance?.bank_slip || undefined,
       valueTotal: finance?.valueTotal || defaultValueTotal || "",
+      discount: finance?.discount || "0",
       firstDueDate: finance?.firstDueDate || "",
       alunoId: alunoId,
     },
@@ -109,16 +119,23 @@ const UpsertFinanceForm = ({ finance, alunoId, onSuccess, defaultValueTotal }: U
     }).format(reais);
   };
 
-  const handleValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleDiscountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     const numericValue = value.replace(/\D/g, "");
-    if (numericValue) {
-      const cents = parseInt(numericValue);
-      const reais = (cents / 100).toFixed(2);
-      form.setValue("valueTotal", reais);
-    } else {
-      form.setValue("valueTotal", "");
+    if (!numericValue) {
+      form.setValue("discount", "0");
+      form.setValue("valueTotal", grossValueTotalNumber.toFixed(2));
+      return;
     }
+
+    const cents = parseInt(numericValue);
+    const discountNumber = cents / 100;
+    const discountStr = discountNumber.toFixed(2);
+
+    const net = Math.max(0, grossValueTotalNumber - discountNumber);
+
+    form.setValue("discount", discountStr);
+    form.setValue("valueTotal", net.toFixed(2));
   };
 
   const bankSlipValue = form.watch("bank_slip");
@@ -151,6 +168,12 @@ const UpsertFinanceForm = ({ finance, alunoId, onSuccess, defaultValueTotal }: U
       if (finance.firstDueDate) {
         setFirstDueDate(finance.firstDueDate);
       }
+
+      const discountNumber = parseFloat(finance.discount || "0") || 0;
+      const netNumber = parseFloat(finance.valueTotal || "0") || 0;
+      setGrossValueTotalNumber(netNumber + discountNumber);
+      form.setValue("discount", finance.discount || "0");
+      form.setValue("valueTotal", netNumber.toFixed(2));
     }
     if (!finance && defaultValueTotal && !form.getValues("valueTotal")) {
       form.setValue("valueTotal", defaultValueTotal);
@@ -168,7 +191,7 @@ const UpsertFinanceForm = ({ finance, alunoId, onSuccess, defaultValueTotal }: U
       </Button>
 
       {isOpen && (
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {finance ? "Editar" : "Adicionar"} Dados Financeiros
@@ -203,6 +226,24 @@ const UpsertFinanceForm = ({ finance, alunoId, onSuccess, defaultValueTotal }: U
                         <SelectItem value="bank_slip">Boleto Bancário</SelectItem>
                       </SelectContent>
                     </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="discount"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Desconto</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="R$ 0,00"
+                        value={field.value ? formatValue(field.value) : ""}
+                        onChange={handleDiscountChange}
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -284,7 +325,7 @@ const UpsertFinanceForm = ({ finance, alunoId, onSuccess, defaultValueTotal }: U
                       <Input
                         placeholder="R$ 0,00"
                         value={field.value ? formatValue(field.value) : ""}
-                        onChange={handleValueChange}
+                        readOnly
                       />
                     </FormControl>
                     <FormMessage />

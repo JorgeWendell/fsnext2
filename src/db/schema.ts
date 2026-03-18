@@ -171,6 +171,7 @@ export const financesTable = pgTable("finances", {
   method: financeMethod("method").notNull(),
   bank_slip: financeBankSlip("bank_slip"),
   valueTotal: text("value").notNull(),
+  discount: text("discount"),
   parcelasPagas: text("parcelas_pagas"), // JSON string para armazenar status das parcelas
   firstDueDate: text("first_due_date"), // Data do primeiro vencimento para boletos
   alunoId: uuid("alunoId")
