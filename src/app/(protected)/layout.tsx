@@ -17,7 +17,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex min-h-svh bg-background">
       {/* Sidebar desktop */}
       <div className="hidden md:flex">
         <SidebarStocky />

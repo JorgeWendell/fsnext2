@@ -257,7 +257,7 @@ const ReportDialog = ({ aluno, finances, escolas, extras }: Props) => {
   };
 
   return (
-    <DialogContent className="w-full max-w-3xl">
+    <DialogContent className="w-full max-w-3xl max-h-[80vh] overflow-y-auto">
       <DialogHeader>
         <DialogTitle>Relatório - {aluno.name}</DialogTitle>
         <DialogDescription>

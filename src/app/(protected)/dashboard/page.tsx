@@ -21,6 +21,7 @@ import {
 } from "@/db/schema";
 import { auth } from "@/lib/auth";
 
+import { MonthYearFilter } from "./components/month-year-filter";
 import { PaymentMethodChart } from "./components/payment-method-chart";
 import { RevenueChart } from "./components/revenue-chart";
 import { StatsCard } from "./components/stats-card";
@@ -55,13 +56,40 @@ function getRevenueFromFinance(
   return valueTotal;
 }
 
-const DashboardPage = async () => {
+type DashboardSearchParams = {
+  month?: string;
+  year?: string;
+};
+
+function toMonthKey(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  return `${year}-${month}`;
+}
+
+function monthKeyToLabel(monthKey: string) {
+  const [year, month] = monthKey.split("-").map((v) => Number(v));
+  const date = new Date(year, month - 1, 1);
+  return date.toLocaleDateString("pt-BR", { month: "short", year: "numeric" });
+}
+
+function isDateInRange(date: Date, start: Date, end: Date) {
+  return date.getTime() >= start.getTime() && date.getTime() <= end.getTime();
+}
+
+const DashboardPage = async ({
+  searchParams,
+}: {
+  searchParams: Promise<DashboardSearchParams>;
+}) => {
   const session = await auth.api.getSession({
     headers: await headers(),
   });
   if (!session?.user) {
     redirect("/login");
   }
+
+  const sp = await searchParams;
 
   let alunosCount = 0;
   let escolasCount = 0;
@@ -121,12 +149,91 @@ const DashboardPage = async () => {
     console.error("Erro ao buscar dados:", error);
   }
 
-  const totalRevenue = finances.reduce(
+  const financeMonthKeys = finances.map((f) =>
+    toMonthKey(new Date(f.createdAt)),
+  );
+  const extrasMonthKeys = extras
+    .map((e) => {
+      const date = (e.paidAt ? new Date(e.paidAt) : null) ?? new Date(e.createdAt);
+      return toMonthKey(date);
+    })
+    .filter(Boolean);
+
+  const uniqueMonthKeys = Array.from(new Set([...financeMonthKeys, ...extrasMonthKeys]));
+  uniqueMonthKeys.sort((a, b) => {
+    const [ay, am] = a.split("-").map(Number);
+    const [by, bm] = b.split("-").map(Number);
+    return new Date(ay, am - 1, 1).getTime() - new Date(by, bm - 1, 1).getTime();
+  });
+
+  const latestMonthKey = uniqueMonthKeys[uniqueMonthKeys.length - 1];
+  const now = new Date();
+
+  const selectedYearFromParams = Number(sp.year);
+  const selectedMonthFromParams = Number(sp.month);
+
+  const defaultDate = latestMonthKey
+    ? (() => {
+        const [y, m] = latestMonthKey.split("-").map(Number);
+        return new Date(y, m - 1, 1);
+      })()
+    : now;
+
+  const selectedYear =
+    Number.isFinite(selectedYearFromParams) && selectedYearFromParams > 0
+      ? selectedYearFromParams
+      : defaultDate.getFullYear();
+
+  const selectedMonth =
+    Number.isFinite(selectedMonthFromParams) &&
+    selectedMonthFromParams >= 1 &&
+    selectedMonthFromParams <= 12
+      ? selectedMonthFromParams
+      : defaultDate.getMonth() + 1;
+
+  const availableYears = Array.from(
+    new Set(uniqueMonthKeys.map((key) => Number(key.split("-")[0]))),
+  ).sort((a, b) => b - a);
+
+  const windowEnd = new Date(selectedYear, selectedMonth, 0, 23, 59, 59, 999);
+  const windowStart = new Date(selectedYear, selectedMonth - 1, 1);
+  windowStart.setMonth(windowStart.getMonth() - 5);
+  windowStart.setHours(0, 0, 0, 0);
+
+  const selectedMonthStart = new Date(selectedYear, selectedMonth - 1, 1, 0, 0, 0, 0);
+  const selectedMonthEnd = new Date(selectedYear, selectedMonth, 0, 23, 59, 59, 999);
+
+  const monthWindowKeys = Array.from({ length: 6 }, (_, idx) => {
+    const d = new Date(
+      windowStart.getFullYear(),
+      windowStart.getMonth() + idx,
+      1,
+    );
+    return toMonthKey(d);
+  });
+
+  const filteredFinances = finances.filter((finance) => {
+    const date = new Date(finance.createdAt);
+    return isDateInRange(date, windowStart, windowEnd);
+  });
+
+  const filteredFinancesMonth = finances.filter((finance) => {
+    const date = new Date(finance.createdAt);
+    return isDateInRange(date, selectedMonthStart, selectedMonthEnd);
+  });
+
+  const filteredExtrasPaidMonth = extras.filter((extra) => {
+    if (!extra.paidAt) return false;
+    const date = new Date(extra.paidAt);
+    return isDateInRange(date, selectedMonthStart, selectedMonthEnd);
+  });
+
+  const totalRevenue = filteredFinancesMonth.reduce(
     (acc, finance) => acc + getRevenueFromFinance(finance),
-    0
+    0,
   );
 
-  const totalExtrasPaid = extras.reduce((acc, extra) => {
+  const totalExtrasPaid = filteredExtrasPaidMonth.reduce((acc, extra) => {
     const value = parseFloat(extra.total || "0");
     if (Number.isNaN(value)) return acc;
     return acc + value;
@@ -139,58 +246,42 @@ const DashboardPage = async () => {
     }).format(value);
   };
 
-  const calculateRevenueByMonth = () => {
-    const monthMap = new Map<string, number>();
-    finances.forEach((finance) => {
-      const date = new Date(finance.createdAt);
-      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-      const revenue = getRevenueFromFinance(finance);
-      const current = monthMap.get(monthKey) || 0;
-      monthMap.set(monthKey, current + revenue);
-    });
-    return Array.from(monthMap.entries())
-      .map(([key, revenue]) => {
-        const [year, month] = key.split("-");
-        const date = new Date(parseInt(year), parseInt(month) - 1);
-        return {
-          month: date.toLocaleDateString("pt-BR", { month: "short", year: "numeric" }),
-          revenue: Math.round(revenue),
-        };
-      })
-      .sort((a, b) => {
-        const dateA = new Date(a.month);
-        const dateB = new Date(b.month);
-        return dateA.getTime() - dateB.getTime();
-      })
-      .slice(-6);
-  };
+  const revenueByMonth = monthWindowKeys.map((key) => {
+    const revenue = filteredFinances.reduce((acc, finance) => {
+      const monthKey = toMonthKey(new Date(finance.createdAt));
+      if (monthKey !== key) return acc;
+      return acc + getRevenueFromFinance(finance);
+    }, 0);
 
-  const calculateRevenueByMethod = () => {
-    const methodMap = new Map<string, number>();
-    const methodNames: Record<string, string> = {
-      pix: "PIX",
-      debit: "Débito",
-      creditvista: "Crédito à Vista",
-      creditparc: "Crédito Parcelado",
-      bank_slip: "Boleto",
+    return {
+      month: monthKeyToLabel(key),
+      revenue: Math.round(revenue),
     };
-    finances.forEach((finance) => {
-      const revenue = getRevenueFromFinance(finance);
-      const methodName = methodNames[finance.method] || finance.method;
-      const current = methodMap.get(methodName) || 0;
-      methodMap.set(methodName, current + revenue);
-    });
-    return Array.from(methodMap.entries())
-      .map(([name, value]) => ({
-        name,
-        value: Math.round(value),
-      }))
-      .filter((item) => item.value > 0)
-      .sort((a, b) => b.value - a.value);
+  });
+
+  const revenueByMethodMap = new Map<string, number>();
+  const methodNames: Record<string, string> = {
+    pix: "PIX",
+    debit: "Débito",
+    creditvista: "Crédito à Vista",
+    creditparc: "Crédito Parcelado",
+    bank_slip: "Boleto",
   };
 
-  const revenueByMonth = calculateRevenueByMonth();
-  const revenueByMethod = calculateRevenueByMethod();
+  filteredFinances.forEach((finance) => {
+    const revenue = getRevenueFromFinance(finance);
+    const methodName = methodNames[finance.method] || finance.method;
+    const current = revenueByMethodMap.get(methodName) || 0;
+    revenueByMethodMap.set(methodName, current + revenue);
+  });
+
+  const revenueByMethod = Array.from(revenueByMethodMap.entries())
+    .map(([name, value]) => ({
+      name,
+      value: Math.round(value),
+    }))
+    .filter((item) => item.value > 0)
+    .sort((a, b) => b.value - a.value);
 
   return (
     <PageContainer>
@@ -201,9 +292,16 @@ const DashboardPage = async () => {
             Visão geral do sistema e estatísticas principais
           </PageDescription>
         </PageHeaderContent>
+        <div className="w-full sm:w-auto">
+          <MonthYearFilter
+            years={availableYears}
+            selectedYear={selectedYear}
+            selectedMonth={selectedMonth}
+          />
+        </div>
       </PageHeader>
       <PageContent>
-        <UpcomingPaymentsAlert finances={finances} />
+        <UpcomingPaymentsAlert finances={filteredFinances} />
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 mt-6">
           <StatsCard
             title="Total de Alunos"
@@ -272,7 +370,8 @@ const DashboardPage = async () => {
               <CardHeader>
                 <CardTitle>Receita por Mês</CardTitle>
                 <CardDescription>
-                  Receita arrecadada nos últimos 6 meses
+                  Receita arrecadada nos últimos 6 meses até{" "}
+                  {monthKeyToLabel(monthWindowKeys[monthWindowKeys.length - 1])}
                 </CardDescription>
               </CardHeader>
               <CardContent>

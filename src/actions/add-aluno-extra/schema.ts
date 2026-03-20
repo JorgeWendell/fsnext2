@@ -8,6 +8,11 @@ export const addAlunoExtraSchema = z.object({
     .trim()
     .min(1, { message: "Valor é obrigatório" }),
   quantity: z.number().int().min(1).default(1),
+  discount: z
+    .string()
+    .trim()
+    .optional()
+    .default("0"),
 });
 
 export type AddAlunoExtraSchema = z.infer<typeof addAlunoExtraSchema>;

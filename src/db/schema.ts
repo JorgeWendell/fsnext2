@@ -206,6 +206,7 @@ export const alunoExtrasTable = pgTable("aluno_extras", {
   type: text("type").notNull(),
   total: text("total").notNull(),
   quantity: text("quantity"),
+  discount: text("discount"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   paid: boolean("paid").notNull().default(false),
   paidMethod: text("paid_method"),

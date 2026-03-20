@@ -123,9 +123,13 @@ const UpsertAlunoForm = ({
     React.useState("");
   const [extraConviteInteiraQty, setExtraConviteInteiraQty] =
     React.useState(1);
+  const [extraConviteInteiraDiscount, setExtraConviteInteiraDiscount] =
+    React.useState("");
   const [extraConviteMeiaValue, setExtraConviteMeiaValue] =
     React.useState("");
   const [extraConviteMeiaQty, setExtraConviteMeiaQty] = React.useState(1);
+  const [extraConviteMeiaDiscount, setExtraConviteMeiaDiscount] =
+    React.useState("");
   const isEditing = !!aluno;
 
   const form = useForm<FormSchema>({
@@ -183,6 +187,10 @@ const UpsertAlunoForm = ({
       setExtraAlbumValue("");
       setExtraConviteInteiraValue("");
       setExtraConviteMeiaValue("");
+      setExtraConviteInteiraDiscount("");
+      setExtraConviteMeiaDiscount("");
+      setExtraConviteInteiraQty(1);
+      setExtraConviteMeiaQty(1);
       setIsExtrasOpen(false);
     },
     onError: () => {
@@ -904,7 +912,7 @@ const UpsertAlunoForm = ({
                                 </span>
                               </div>
                               {extraConviteInteira && (
-                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
+                                <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 mt-2">
                                   <Input
                                     placeholder="Valor unitário - R$ 0,00"
                                     value={
@@ -947,15 +955,46 @@ const UpsertAlunoForm = ({
                                     placeholder="Qtd."
                                   />
                                   <Input
+                                    placeholder="Desconto - R$ 0,00"
+                                    value={
+                                      extraConviteInteiraDiscount
+                                        ? formatCurrency(
+                                            extraConviteInteiraDiscount,
+                                          )
+                                        : ""
+                                    }
+                                    onChange={(e) => {
+                                      const raw = e.target.value;
+                                      const onlyDigits =
+                                        raw.replace(/\D/g, "");
+                                      if (!onlyDigits) {
+                                        setExtraConviteInteiraDiscount("");
+                                        return;
+                                      }
+                                      const cents = parseInt(onlyDigits, 10);
+                                      const asNumberString = (
+                                        cents / 100
+                                      ).toFixed(2);
+                                      setExtraConviteInteiraDiscount(
+                                        asNumberString,
+                                      );
+                                    }}
+                                  />
+                                  <Input
                                     readOnly
                                     value={
                                       extraConviteInteiraValue
                                         ? formatCurrency(
-                                            (
+                                            Math.max(
+                                              0,
                                               parseFloat(
                                                 extraConviteInteiraValue ||
                                                   "0",
-                                              ) * extraConviteInteiraQty
+                                              ) * extraConviteInteiraQty -
+                                                parseFloat(
+                                                  extraConviteInteiraDiscount ||
+                                                    "0",
+                                                ),
                                             ).toFixed(2),
                                           )
                                         : ""
@@ -1001,7 +1040,7 @@ const UpsertAlunoForm = ({
                                 </span>
                               </div>
                               {extraConviteMeia && (
-                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
+                                <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 mt-2">
                                   <Input
                                     placeholder="Valor unitário - R$ 0,00"
                                     value={
@@ -1042,14 +1081,45 @@ const UpsertAlunoForm = ({
                                     placeholder="Qtd."
                                   />
                                   <Input
+                                    placeholder="Desconto - R$ 0,00"
+                                    value={
+                                      extraConviteMeiaDiscount
+                                        ? formatCurrency(
+                                            extraConviteMeiaDiscount,
+                                          )
+                                        : ""
+                                    }
+                                    onChange={(e) => {
+                                      const raw = e.target.value;
+                                      const onlyDigits =
+                                        raw.replace(/\D/g, "");
+                                      if (!onlyDigits) {
+                                        setExtraConviteMeiaDiscount("");
+                                        return;
+                                      }
+                                      const cents = parseInt(onlyDigits, 10);
+                                      const asNumberString = (
+                                        cents / 100
+                                      ).toFixed(2);
+                                      setExtraConviteMeiaDiscount(
+                                        asNumberString,
+                                      );
+                                    }}
+                                  />
+                                  <Input
                                     readOnly
                                     value={
                                       extraConviteMeiaValue
                                         ? formatCurrency(
-                                            (
+                                            Math.max(
+                                              0,
                                               parseFloat(
                                                 extraConviteMeiaValue || "0",
-                                              ) * extraConviteMeiaQty
+                                              ) * extraConviteMeiaQty -
+                                                parseFloat(
+                                                  extraConviteMeiaDiscount ||
+                                                    "0",
+                                                ),
                                             ).toFixed(2),
                                           )
                                         : ""
@@ -1128,14 +1198,25 @@ const UpsertAlunoForm = ({
                                     const unit = parseFloat(
                                       extraConviteInteiraValue || "0",
                                     );
-                                    const total = (
-                                      unit * extraConviteInteiraQty
+                                    const discountValue = parseFloat(
+                                      extraConviteInteiraDiscount || "0",
+                                    );
+                                    const grossTotal =
+                                      unit * extraConviteInteiraQty;
+                                    const total = Math.max(
+                                      0,
+                                      grossTotal - discountValue,
+                                    ).toFixed(2);
+                                    const discount = Math.max(
+                                      0,
+                                      discountValue,
                                     ).toFixed(2);
                                     addAlunoExtraAction.execute({
                                       alunoId: aluno.id,
                                       type: "convite_extra",
                                       total,
                                       quantity: extraConviteInteiraQty,
+                                      discount,
                                     });
                                   }
 
@@ -1143,14 +1224,24 @@ const UpsertAlunoForm = ({
                                     const unit = parseFloat(
                                       extraConviteMeiaValue || "0",
                                     );
-                                    const total = (
-                                      unit * extraConviteMeiaQty
+                                    const discountValue = parseFloat(
+                                      extraConviteMeiaDiscount || "0",
+                                    );
+                                    const grossTotal = unit * extraConviteMeiaQty;
+                                    const total = Math.max(
+                                      0,
+                                      grossTotal - discountValue,
+                                    ).toFixed(2);
+                                    const discount = Math.max(
+                                      0,
+                                      discountValue,
                                     ).toFixed(2);
                                     addAlunoExtraAction.execute({
                                       alunoId: aluno.id,
                                       type: "convite_extra",
                                       total,
                                       quantity: extraConviteMeiaQty,
+                                      discount,
                                     });
                                   }
                                 }}

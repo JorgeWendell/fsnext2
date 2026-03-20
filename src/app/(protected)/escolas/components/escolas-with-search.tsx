@@ -24,7 +24,7 @@ type Representante = {
 type Pacote = typeof pacotesTable.$inferSelect;
 
 interface EscolasWithSearchProps {
-  escolas: typeof escolasTable.$inferSelect[];
+  escolas: (typeof escolasTable.$inferSelect)[];
   representantes: Representante[];
   pacotes: Pacote[];
 }
@@ -50,7 +50,7 @@ const EscolasWithSearch = ({
           (escola.address || "").toLowerCase().includes(searchLower)
         );
       }),
-    [escolas, searchTerm]
+    [escolas, searchTerm],
   );
 
   useEffect(() => {
@@ -193,4 +193,3 @@ const EscolasWithSearch = ({
 };
 
 export default EscolasWithSearch;
-

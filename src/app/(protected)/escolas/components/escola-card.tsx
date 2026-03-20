@@ -87,7 +87,9 @@ const EscolaCard = ({ escola, representantes, pacotes }: EscolaCardProps) => {
             <p className="text-xs text-muted-foreground font-medium">
               Código: {escola.codigo}/{escola.ano ? escola.ano.slice(-2) : ""}
             </p>
-            <h3 className="text-sm font-semibold mt-1 truncate">{escola.name}</h3>
+            <h3 className="text-sm font-semibold mt-1 truncate">
+              {escola.name}
+            </h3>
             <p className="text-sm text-muted-foreground mt-0.5">
               {formatPhone(escola.phone)}
             </p>
@@ -114,7 +116,10 @@ const EscolaCard = ({ escola, representantes, pacotes }: EscolaCardProps) => {
         </Dialog>
         <AlertDialog>
           <AlertDialogTrigger asChild>
-            <Button variant="outline" className="w-full transition-all duration-200 hover:scale-[1.02]">
+            <Button
+              variant="outline"
+              className="w-full transition-all duration-200 hover:scale-[1.02]"
+            >
               <TrashIcon />
               Deletar
             </Button>

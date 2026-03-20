@@ -25,6 +25,7 @@ export const addAlunoExtra = actionClient
       type: parsedInput.type,
       total: parsedInput.total,
       quantity: String(parsedInput.quantity ?? 1),
+      discount: parsedInput.discount ?? "0",
     });
 
     revalidatePath("/alunos");

@@ -76,7 +76,7 @@ export const SidebarStocky = () => {
   const { theme } = useTheme();
 
   return (
-    <div className="flex h-screen w-64 flex-col border-r border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900">
+    <div className="flex h-svh w-64 flex-col overflow-hidden border-r border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900">
       <div className="flex items-center gap-3 p-6">
         <Image
           src={theme === "dark" ? "/logo.png" : "/logo2.png"}
@@ -91,7 +91,7 @@ export const SidebarStocky = () => {
       </div>
 
       <nav className="flex flex-1 flex-col px-4 py-6">
-        <div className="space-y-1">
+        <div className="flex-1 space-y-1 overflow-y-auto pr-1">
           {navigationItems
             .filter((item) => item.href !== "/suporte" && item.href !== "/configuracoes")
             .map((item) => {
