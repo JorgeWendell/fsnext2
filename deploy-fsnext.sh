@@ -3,7 +3,7 @@ set -euo pipefail
 
 APP_NAME="fsnext"
 APP_USER="${SUDO_USER:-$USER}"
-APP_DIR="/var/www/fsnext"
+APP_DIR="/var/www/fsnext2"
 DOMAIN="fs.adelbr.tech"
 APP_PORT=3000
 NODE_MAJOR=22
