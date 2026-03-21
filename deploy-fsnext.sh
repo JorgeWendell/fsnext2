@@ -176,4 +176,3 @@ echo "Deploy finalizado."
 echo "Serviço: sudo systemctl status ${APP_NAME}.service -l"
 echo "Logs: sudo journalctl -u ${APP_NAME}.service -f"
 echo "Healthcheck: curl -I http://127.0.0.1:${APP_PORT}/api/health"
-
