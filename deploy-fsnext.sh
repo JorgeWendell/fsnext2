@@ -1,135 +1,179 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# ====== CONFIGURAÇÕES BÁSICAS (EDITE ANTES DE RODAR) ======
-APP_DIR="/var/www/fsnext2"        # pasta onde o projeto vai ficar no servidor
-DOMAIN="fs.adelbr.tech"         # troque pelo seu domínio real
-APP_PORT=3000                    # porta onde o Next.js vai rodar
+APP_NAME="fsnext"
+APP_USER="${SUDO_USER:-$USER}"
+APP_DIR="/var/www/fsnext"
+DOMAIN="fs.adelbr.tech"
+APP_PORT=3000
+NODE_MAJOR=22
+NODE_MAX_OLD_SPACE=1536
+SERVICE_MEMORY_MAX="2500M"
+POSTGRES_DB="fsnext"
+POSTGRES_USER="fsnext_user"
+POSTGRES_PASSWORD="lucas120908"
+BETTER_AUTH_SECRET="3L8AKwGUZa+VMTQc472p2FqT0UTyfNG8aBgAH+LfSMw=
+BETTER_AUTH_URL="https://${DOMAIN}"
 
-# ====== ATUALIZAÇÃO DO SISTEMA ======
-sudo apt update && sudo apt upgrade -y
+sudo apt update
+sudo apt upgrade -y
+sudo apt install -y ca-certificates curl gnupg git nginx python3-certbot-nginx postgresql postgresql-contrib
 
-# ====== PACOTES BÁSICOS ======
-sudo apt install -y curl git nginx python3-certbot-nginx
+if ! command -v node >/dev/null 2>&1 || ! node -v | grep -q "^v${NODE_MAJOR}\."; then
+  sudo mkdir -p /etc/apt/keyrings
+  curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | sudo gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg
+  echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_${NODE_MAJOR}.x nodistro main" | sudo tee /etc/apt/sources.list.d/nodesource.list >/dev/null
+  sudo apt update
+  sudo apt install -y nodejs
+fi
 
-# ====== POSTGRESQL ======
-sudo apt install -y postgresql postgresql-contrib
+NODE_PATH="$(command -v node)"
+if [ -z "$NODE_PATH" ]; then
+  echo "Node.js não encontrado após instalação."
+  exit 1
+fi
 
 sudo systemctl enable postgresql
 sudo systemctl start postgresql
 
-sudo -u postgres psql <<'EOF'
-DO
-$$
+sudo -u postgres psql -v ON_ERROR_STOP=1 <<EOF
+DO \$\$
 BEGIN
-   IF NOT EXISTS (
-      SELECT FROM pg_catalog.pg_user WHERE usename = 'fsnext_user'
-   ) THEN
-      CREATE USER fsnext_user WITH PASSWORD 'Lucas120908';
-   END IF;
-
-   IF NOT EXISTS (
-      SELECT FROM pg_database WHERE datname = 'fsnext'
-   ) THEN
-      CREATE DATABASE fsnext OWNER fsnext_user;
-   END IF;
-
-   GRANT ALL PRIVILEGES ON DATABASE fsnext TO fsnext_user;
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = '${POSTGRES_USER}') THEN
+    CREATE ROLE ${POSTGRES_USER} LOGIN PASSWORD '${POSTGRES_PASSWORD}';
+  ELSE
+    ALTER ROLE ${POSTGRES_USER} WITH LOGIN PASSWORD '${POSTGRES_PASSWORD}';
+  END IF;
 END
-$$;
+\$\$;
 EOF
 
-# ====== NVM + NODE.JS 24.x ======
-if [ ! -d "$HOME/.nvm" ]; then
-  curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.0/install.sh | bash
+if ! sudo -u postgres psql -tAc "SELECT 1 FROM pg_database WHERE datname='${POSTGRES_DB}'" | grep -q "1"; then
+  sudo -u postgres createdb -O "${POSTGRES_USER}" "${POSTGRES_DB}"
 fi
 
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+sudo -u postgres psql -v ON_ERROR_STOP=1 <<EOF
+GRANT ALL PRIVILEGES ON DATABASE ${POSTGRES_DB} TO ${POSTGRES_USER};
+EOF
 
-nvm install 24
-nvm use 24
-nvm alias default 24
+export PGPASSWORD="${POSTGRES_PASSWORD}"
+if ! psql -h 127.0.0.1 -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" -c "SELECT 1;" >/dev/null 2>&1; then
+  echo "Falha ao validar conexão com PostgreSQL usando usuário/senha do deploy."
+  exit 1
+fi
+unset PGPASSWORD
 
-# ====== NPM (ATUALIZAR PARA A VERSÃO MAIS RECENTE) ======
-npm install -g npm@latest
+sudo mkdir -p "${APP_DIR}"
+sudo chown -R "${APP_USER}:${APP_USER}" "${APP_DIR}"
+cd "${APP_DIR}"
 
-# ====== PM2 GLOBAL ======
-npm install -g pm2
+if [ ! -f package.json ]; then
+  echo "package.json não encontrado em ${APP_DIR}. Copie o projeto antes de executar."
+  exit 1
+fi
 
-# ====== CÓDIGO DA APLICAÇÃO ======
-# Cria pasta da aplicação, se não existir
-sudo mkdir -p "$APP_DIR"
-sudo chown -R "$USER":"$USER" "$APP_DIR"
-
-cd "$APP_DIR"
-
-# Se quiser clonar o repo aqui, descomente e ajuste:
-# git clone https://github.com/JorgeWendell/fsnext2 .
-# git checkout main
-
-# Se você já copiou os arquivos do projeto para $APP_DIR,
-# pode comentar a parte de clone acima e o script só vai instalar e subir.
-
-# ====== ARQUIVO .env (usa a DATABASE_URL combinada) ======
 if [ ! -f .env ]; then
-  cat <<EOF > .env
-DATABASE_URL="postgres://fsnext_user:Lucas120908@localhost:5432/fsnext"
+  cat > .env <<EOF
+DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@127.0.0.1:5432/${POSTGRES_DB}
+BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET}
+BETTER_AUTH_URL=${BETTER_AUTH_URL}
+NEXT_PUBLIC_APP_URL=${BETTER_AUTH_URL}
+NODE_ENV=production
+PORT=${APP_PORT}
 EOF
-  echo "Arquivo .env criado com DATABASE_URL padrão. Ajuste se necessário."
-else
-  echo "Arquivo .env já existe, não foi modificado."
 fi
 
-# ====== INSTALAR DEPENDÊNCIAS, MIGRAÇÕES E BUILDAR ======
+required_envs=("DATABASE_URL" "BETTER_AUTH_SECRET" "BETTER_AUTH_URL")
+for env_key in "${required_envs[@]}"; do
+  if ! grep -q "^${env_key}=" .env; then
+    echo "Variável obrigatória ausente no .env: ${env_key}"
+    exit 1
+  fi
+done
+
 npm install
 npx drizzle-kit push
 npm run build
 
-# ====== PM2: INICIAR E CONFIGURAR NO BOOT ======
-# Servidor com 6GB RAM: limite em 2GB evita OOM e deixa margem para sistema/Postgres/Nginx
-export PORT=$APP_PORT
+sudo tee /etc/systemd/system/${APP_NAME}.service >/dev/null <<EOF
+[Unit]
+Description=FSNext Next.js app
+After=network.target postgresql.service
+Wants=postgresql.service
 
-export NODE_OPTIONS="--max-old-space-size=2048"
+[Service]
+Type=simple
+User=${APP_USER}
+WorkingDirectory=${APP_DIR}
+Environment=NODE_ENV=production
+Environment=PORT=${APP_PORT}
+Environment=NODE_OPTIONS=--max-old-space-size=${NODE_MAX_OLD_SPACE}
+EnvironmentFile=${APP_DIR}/.env
+ExecStart=${NODE_PATH} ${APP_DIR}/node_modules/next/dist/bin/next start -p ${APP_PORT}
+Restart=always
+RestartSec=5
+MemoryMax=${SERVICE_MEMORY_MAX}
 
-pm2 start npm --name "fsnext" --max-memory-restart 2G -- start
-pm2 save
+[Install]
+WantedBy=multi-user.target
+EOF
 
-sudo env "PATH=$PATH" pm2 startup systemd -u "$USER" --hp "$HOME"
-
-# Se o PM2 foi configurado como root (pm2-root.service), reinicia automaticamente se for morto (ex: OOM)
-PM2_SVC="pm2-$(whoami).service"
-if [ "$(whoami)" = "root" ]; then PM2_SVC="pm2-root.service"; fi
-if systemctl list-unit-files --full | grep -q "$PM2_SVC"; then
-  sudo mkdir -p "/etc/systemd/system/${PM2_SVC}.d"
-  echo -e "[Service]\nRestart=on-failure\nRestartSec=5" | sudo tee "/etc/systemd/system/${PM2_SVC}.d/override.conf" > /dev/null
-  sudo systemctl daemon-reload
+if ! swapon --show | grep -q "/swapfile"; then
+  if [ ! -f /swapfile ]; then
+    sudo fallocate -l 2G /swapfile
+    sudo chmod 600 /swapfile
+    sudo mkswap /swapfile
+  fi
+  sudo swapon /swapfile
+  if ! grep -q "^/swapfile" /etc/fstab; then
+    echo "/swapfile none swap sw 0 0" | sudo tee -a /etc/fstab >/dev/null
+  fi
 fi
 
-# ====== NGINX (REVERSE PROXY) ======
-sudo tee /etc/nginx/sites-available/fsnext > /dev/null <<EOF
+sudo tee /etc/nginx/sites-available/${APP_NAME} >/dev/null <<EOF
 server {
     listen 80;
-    server_name $DOMAIN;
+    server_name ${DOMAIN} www.${DOMAIN};
+
+    location /healthz {
+        proxy_pass http://127.0.0.1:${APP_PORT}/api/health;
+        proxy_http_version 1.1;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+    }
 
     location / {
-        proxy_pass http://127.0.0.1:$APP_PORT;
+        proxy_pass http://127.0.0.1:${APP_PORT};
         proxy_http_version 1.1;
         proxy_set_header Upgrade \$http_upgrade;
-        proxy_set_header Connection 'upgrade';
+        proxy_set_header Connection "upgrade";
         proxy_set_header Host \$host;
-        proxy_cache_bypass \$http_upgrade;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_read_timeout 60s;
     }
 }
 EOF
 
-sudo ln -sf /etc/nginx/sites-available/fsnext /etc/nginx/sites-enabled/fsnext
+sudo ln -sf /etc/nginx/sites-available/${APP_NAME} /etc/nginx/sites-enabled/${APP_NAME}
+if [ -f /etc/nginx/sites-enabled/default ]; then
+  sudo rm -f /etc/nginx/sites-enabled/default
+fi
 sudo nginx -t
 sudo systemctl reload nginx
 
-# ====== CERTBOT (HTTPS) ======
-echo "Agora o Certbot será executado. Certifique-se de que o domínio aponta para este servidor."
-sudo certbot --nginx -d "$DOMAIN" -d "www.$DOMAIN" || true
+sudo systemctl daemon-reload
+sudo systemctl enable ${APP_NAME}.service
+sudo systemctl restart ${APP_NAME}.service
+sudo systemctl status ${APP_NAME}.service --no-pager -l
 
-echo "Deploy finalizado. Verifique o site em http://$DOMAIN e depois em https://$DOMAIN"
+sudo certbot --nginx -d "${DOMAIN}" -d "www.${DOMAIN}" --non-interactive --agree-tos -m "admin@${DOMAIN#*.}" || true
+
+echo "Deploy finalizado."
+echo "Serviço: sudo systemctl status ${APP_NAME}.service -l"
+echo "Logs: sudo journalctl -u ${APP_NAME}.service -f"
+echo "Healthcheck: curl -I http://127.0.0.1:${APP_PORT}/api/health"
 
