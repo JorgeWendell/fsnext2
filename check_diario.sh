@@ -41,6 +41,8 @@ run_check "DISCO" "df -h /"
 run_check "FAIL2BAN" "fail2ban-client status"
 run_check "RESTARTS APP" "systemctl show ${APP_SERVICE} -p NRestarts -p MemoryCurrent -p MemoryMax -p TasksCurrent"
 run_check "ULTIMOS LOGS APP" "journalctl -u ${APP_SERVICE} -n 40 --no-pager"
+run_check "ALERTA DSM/SHARED MEMORY (APP)" "journalctl -u ${APP_SERVICE} --since '24 hours ago' --no-pager | grep -Ei 'dsm_impl_posix|shared memory segment|could not open shared memory segment|Failed to get session' | tail -n 20"
+run_check "ALERTA DSM/SHARED MEMORY (POSTGRES)" "journalctl -u ${DB_SERVICE} --since '24 hours ago' --no-pager | grep -Ei 'dsm_impl_posix|shared memory segment|could not open shared memory segment|FATAL' | tail -n 20"
 run_check "EVENTOS OOM" "dmesg -T | grep -Ei 'oom|out of memory|killed process' | tail -n 20"
 
 print_title "FIM CHECK DIARIO"
