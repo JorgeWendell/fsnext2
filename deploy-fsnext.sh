@@ -17,7 +17,7 @@ BETTER_AUTH_URL="https://${DOMAIN}"
 
 sudo apt update
 sudo apt upgrade -y
-sudo apt install -y ca-certificates curl gnupg git nginx python3-certbot-nginx postgresql postgresql-contrib
+sudo apt install -y ca-certificates curl gnupg git nginx python3-certbot-nginx postgresql postgresql-contrib fail2ban ufw openssh-server
 
 if ! command -v node >/dev/null 2>&1 || ! node -v | grep -q "^v${NODE_MAJOR}\."; then
   sudo mkdir -p /etc/apt/keyrings
@@ -169,6 +169,14 @@ sudo systemctl daemon-reload
 sudo systemctl enable ${APP_NAME}.service
 sudo systemctl restart ${APP_NAME}.service
 sudo systemctl status ${APP_NAME}.service --no-pager -l
+
+sudo systemctl enable fail2ban
+sudo systemctl restart fail2ban
+
+sudo ufw allow OpenSSH
+sudo ufw allow 80
+sudo ufw allow 443
+sudo ufw --force enable
 
 sudo certbot --nginx -d "${DOMAIN}" -d "www.${DOMAIN}" --non-interactive --agree-tos -m "admin@${DOMAIN#*.}" || true
 
