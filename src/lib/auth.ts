@@ -38,6 +38,6 @@ export const auth = betterAuth({
   ],
   baseURL:
     process.env.NODE_ENV === "production"
-      ? "http://fs.adelbr.tech"
+      ? "https://fs.adelbr.tech"
       : "http://localhost:3000",
 });
