@@ -3,6 +3,10 @@ set -euo pipefail
 
 NEW_SSH_PORT="2251"
 ALLOWED_SSH_IP="179.247.242.32"
+WEB_ALLOWED_IPS=(
+  "179.247.242.32"
+  "179.180.250.128"
+)
 # IP de emergencia opcional (deixe vazio para desativado)
 # Exemplo: EMERGENCY_SSH_IP="200.200.200.200"
 EMERGENCY_SSH_IP=""
@@ -70,12 +74,17 @@ chmod 440 /etc/sudoers.d/99-${ADMIN_USER_NAME}
 
 sshd -t
 ufw delete allow "${NEW_SSH_PORT}/tcp" >/dev/null 2>&1 || true
+ufw delete allow 80/tcp >/dev/null 2>&1 || true
+ufw delete allow 443/tcp >/dev/null 2>&1 || true
+ufw delete allow OpenSSH >/dev/null 2>&1 || true
 ufw allow from "${ALLOWED_SSH_IP}" to any port "${NEW_SSH_PORT}" proto tcp
 if [[ -n "${EMERGENCY_SSH_IP}" ]]; then
   ufw allow from "${EMERGENCY_SSH_IP}" to any port "${NEW_SSH_PORT}" proto tcp
 fi
-ufw allow 80/tcp
-ufw allow 443/tcp
+for web_ip in "${WEB_ALLOWED_IPS[@]}"; do
+  ufw allow from "${web_ip}" to any port 80 proto tcp
+  ufw allow from "${web_ip}" to any port 443 proto tcp
+done
 ufw delete allow 22/tcp >/dev/null 2>&1 || true
 ufw default deny incoming
 ufw default allow outgoing
@@ -90,7 +99,7 @@ if [[ -n "${EMERGENCY_SSH_IP}" ]]; then
 else
   echo "IP de emergencia SSH: desativado"
 fi
-echo "Portas liberadas no firewall: ${NEW_SSH_PORT} (restrita por IP), 80, 443"
+echo "Portas liberadas no firewall: ${NEW_SSH_PORT} (somente ${ALLOWED_SSH_IP}), 80 e 443 (somente IPs: ${WEB_ALLOWED_IPS[*]})"
 echo "Root remoto bloqueado."
 echo "Usuario administrativo criado/atualizado: ${ADMIN_USER_NAME}"
 echo "Teste agora em outro terminal: ssh -p ${NEW_SSH_PORT} ${ADMIN_USER_NAME}@SEU_IP"
