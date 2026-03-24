@@ -9,11 +9,15 @@ APP_PORT=3000
 NODE_MAJOR=22
 NODE_MAX_OLD_SPACE=1536
 SERVICE_MEMORY_MAX="2500M"
+SERVICE_CPU_QUOTA="200%"
+SERVICE_TASKS_MAX="300"
+SERVICE_NOFILE_LIMIT="65535"
 POSTGRES_DB="fsnext"
 POSTGRES_USER="fsnext_user"
 POSTGRES_PASSWORD="lucas120908"
 BETTER_AUTH_SECRET="8zR6aI1Hc8LAsb4cwxPdiCR19KDwJjY"
 BETTER_AUTH_URL="https://${DOMAIN}"
+ENABLE_STRICT_EGRESS="false"
 
 sudo apt update
 sudo apt upgrade -y
@@ -27,8 +31,16 @@ if ! command -v node >/dev/null 2>&1 || ! node -v | grep -q "^v${NODE_MAJOR}\.";
   sudo apt install -y nodejs
 fi
 
-NODE_PATH="$(command -v node)"
-if [ -z "$NODE_PATH" ]; then
+NODE_PATH=""
+if [ -x /usr/bin/node ]; then
+  NODE_PATH="/usr/bin/node"
+elif [ -x /usr/local/bin/node ]; then
+  NODE_PATH="/usr/local/bin/node"
+else
+  NODE_PATH="$(command -v node || true)"
+fi
+
+if [ -z "$NODE_PATH" ] || [ ! -x "$NODE_PATH" ]; then
   echo "Node.js não encontrado após instalação."
   exit 1
 fi
@@ -104,6 +116,7 @@ Wants=postgresql.service
 [Service]
 Type=simple
 User=${APP_USER}
+Group=${APP_USER}
 WorkingDirectory=${APP_DIR}
 Environment=NODE_ENV=production
 Environment=PORT=${APP_PORT}
@@ -112,7 +125,28 @@ EnvironmentFile=${APP_DIR}/.env
 ExecStart=${NODE_PATH} ${APP_DIR}/node_modules/next/dist/bin/next start -p ${APP_PORT}
 Restart=always
 RestartSec=5
+TimeoutStartSec=60
+TimeoutStopSec=30
 MemoryMax=${SERVICE_MEMORY_MAX}
+CPUQuota=${SERVICE_CPU_QUOTA}
+TasksMax=${SERVICE_TASKS_MAX}
+LimitNOFILE=${SERVICE_NOFILE_LIMIT}
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectControlGroups=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectClock=true
+RestrictSUIDSGID=true
+RestrictRealtime=true
+LockPersonality=true
+RemoveIPC=true
+UMask=0077
+SystemCallArchitectures=native
+ReadWritePaths=${APP_DIR}/.next ${APP_DIR}/.next/cache /tmp
 
 [Install]
 WantedBy=multi-user.target
@@ -176,6 +210,19 @@ sudo systemctl restart fail2ban
 sudo ufw allow OpenSSH
 sudo ufw allow 80
 sudo ufw allow 443
+
+if [ "${ENABLE_STRICT_EGRESS}" = "true" ]; then
+  sudo ufw default deny outgoing
+  sudo ufw allow out 53
+  sudo ufw allow out 80
+  sudo ufw allow out 443
+  sudo ufw allow out to 127.0.0.1
+  sudo ufw allow out to 127.0.0.1 port 5432 proto tcp
+  sudo ufw allow out to any port 123 proto udp
+else
+  sudo ufw default allow outgoing
+fi
+
 sudo ufw --force enable
 
 sudo certbot --nginx -d "${DOMAIN}" -d "www.${DOMAIN}" --non-interactive --agree-tos -m "admin@${DOMAIN#*.}" || true
