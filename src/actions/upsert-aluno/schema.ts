@@ -2,7 +2,7 @@ import z from "zod";
 
 export const upsertAlunoSchema = z.object({
   id: z.string().optional(),
-  name: z.string().trim().min(1, { message: "Nome é obrigatório" }),
+  name: z.string().trim().toUpperCase().min(1, { message: "Nome é obrigatório" }),
   codigo: z
     .string()
     .trim()

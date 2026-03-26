@@ -1,10 +1,12 @@
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import {
   boolean,
+  check,
   pgEnum,
   pgTable,
   text,
   timestamp,
+  uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
 
@@ -108,35 +110,42 @@ export const escolaTableRelations = relations(escolasTable, ({ one }) => ({
 
 export const alunosSexEnum = pgEnum("alunos_sex", ["male", "female"]);
 
-export const alunosTable = pgTable("alunos", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  name: text("name").notNull(),
-  codigo: text("codigo").notNull(),
-  class: text("class").notNull(),
-  ano_formacao: text("ano_formacao").notNull(),
-  escola: uuid("escola")
-    .notNull()
-    .references(() => escolasTable.id, { onDelete: "cascade" }),
-  address: text("address"),
-  phone: text("phone"),
-  sex: alunosSexEnum("sex").notNull(),
-  album: boolean("album").notNull().default(false),
-  valor_album: text("valor_album"),
-  colacao: boolean("colacao").notNull().default(false),
-  valor_colacao: text("valor_colacao"),
-  baile: boolean("baile").notNull().default(false),
-  valor_baile: text("valor_baile"),
-  convite_inteira: boolean("convite_inteira").notNull().default(false),
-  valor_convite_inteira: text("valor_convite_inteira"),
-  convite_meia: boolean("convite_meia").notNull().default(false),
-  valor_convite_meia: text("valor_convite_meia"),
-  active: boolean("active").notNull().default(true),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  updateAt: timestamp("update_at")
-    .notNull()
-    .defaultNow()
-    .$onUpdate(() => new Date()),
-});
+export const alunosTable = pgTable(
+  "alunos",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    name: text("name").notNull(),
+    codigo: text("codigo").notNull(),
+    class: text("class").notNull(),
+    ano_formacao: text("ano_formacao").notNull(),
+    escola: uuid("escola")
+      .notNull()
+      .references(() => escolasTable.id, { onDelete: "cascade" }),
+    address: text("address"),
+    phone: text("phone"),
+    sex: alunosSexEnum("sex").notNull(),
+    album: boolean("album").notNull().default(false),
+    valor_album: text("valor_album"),
+    colacao: boolean("colacao").notNull().default(false),
+    valor_colacao: text("valor_colacao"),
+    baile: boolean("baile").notNull().default(false),
+    valor_baile: text("valor_baile"),
+    convite_inteira: boolean("convite_inteira").notNull().default(false),
+    valor_convite_inteira: text("valor_convite_inteira"),
+    convite_meia: boolean("convite_meia").notNull().default(false),
+    valor_convite_meia: text("valor_convite_meia"),
+    active: boolean("active").notNull().default(true),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updateAt: timestamp("update_at")
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (table) => [
+    uniqueIndex("alunos_name_unique_idx").on(table.name),
+    check("alunos_name_upper_check", sql`${table.name} = upper(${table.name})`),
+  ],
+);
 
 export const alunosTableRelations = relations(alunosTable, ({ one }) => ({
   escola: one(escolasTable, {

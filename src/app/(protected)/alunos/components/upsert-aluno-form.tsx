@@ -51,40 +51,39 @@ import {
 import { alunosTable, pacotesTable } from "@/db/schema";
 import { validatePhone } from "@/lib/validations";
 
-const formSchema = z
-  .object({
-    name: z.string().trim().min(1, { message: "Nome é obrigatório" }),
-    codigo: z
-      .string()
-      .trim()
-      .length(3, { message: "Código deve ter exatamente 3 dígitos" })
-      .regex(/^\d{3}$/, { message: "Código deve conter apenas números" }),
-    class: z.string().trim().min(1, { message: "Classe é obrigatória" }),
-    ano_formacao: z
-      .string()
-      .trim()
-      .min(4, { message: "Ano de formação é obrigatório" }),
-    address: z.string().trim().optional(),
-    phone: z
-      .string()
-      .trim()
-      .optional()
-      .refine((val) => !val || validatePhone(val), {
-        message: "Telefone inválido",
-      }),
-    sex: z.enum(["male", "female"], { message: "Sexo é obrigatório" }),
-    escola: z.string().trim().min(1, { message: "Escola é obrigatória" }),
-    album: z.boolean().optional(),
-    valor_album: z.string().optional(),
-    colacao: z.boolean().optional(),
-    valor_colacao: z.string().optional(),
-    baile: z.boolean().optional(),
-    valor_baile: z.string().optional(),
-    convite_inteira: z.boolean().optional(),
-    valor_convite_inteira: z.string().optional(),
-    convite_meia: z.boolean().optional(),
-    valor_convite_meia: z.string().optional(),
-  });
+const formSchema = z.object({
+  name: z.string().trim().min(1, { message: "Nome é obrigatório" }),
+  codigo: z
+    .string()
+    .trim()
+    .length(3, { message: "Código deve ter exatamente 3 dígitos" })
+    .regex(/^\d{3}$/, { message: "Código deve conter apenas números" }),
+  class: z.string().trim().min(1, { message: "Classe é obrigatória" }),
+  ano_formacao: z
+    .string()
+    .trim()
+    .min(4, { message: "Ano de formação é obrigatório" }),
+  address: z.string().trim().optional(),
+  phone: z
+    .string()
+    .trim()
+    .optional()
+    .refine((val) => !val || validatePhone(val), {
+      message: "Telefone inválido",
+    }),
+  sex: z.enum(["male", "female"], { message: "Sexo é obrigatório" }),
+  escola: z.string().trim().min(1, { message: "Escola é obrigatória" }),
+  album: z.boolean().optional(),
+  valor_album: z.string().optional(),
+  colacao: z.boolean().optional(),
+  valor_colacao: z.string().optional(),
+  baile: z.boolean().optional(),
+  valor_baile: z.string().optional(),
+  convite_inteira: z.boolean().optional(),
+  valor_convite_inteira: z.string().optional(),
+  convite_meia: z.boolean().optional(),
+  valor_convite_meia: z.string().optional(),
+});
 
 type FormSchema = z.infer<typeof formSchema>;
 
@@ -115,18 +114,15 @@ const UpsertAlunoForm = ({
     React.useState<boolean>(financeOpenByDefault);
   const [isExtrasOpen, setIsExtrasOpen] = React.useState(false);
   const [extraAlbum, setExtraAlbum] = React.useState(false);
-  const [extraConviteInteira, setExtraConviteInteira] =
-    React.useState(false);
+  const [extraConviteInteira, setExtraConviteInteira] = React.useState(false);
   const [extraConviteMeia, setExtraConviteMeia] = React.useState(false);
   const [extraAlbumValue, setExtraAlbumValue] = React.useState("");
   const [extraConviteInteiraValue, setExtraConviteInteiraValue] =
     React.useState("");
-  const [extraConviteInteiraQty, setExtraConviteInteiraQty] =
-    React.useState(1);
+  const [extraConviteInteiraQty, setExtraConviteInteiraQty] = React.useState(1);
   const [extraConviteInteiraDiscount, setExtraConviteInteiraDiscount] =
     React.useState("");
-  const [extraConviteMeiaValue, setExtraConviteMeiaValue] =
-    React.useState("");
+  const [extraConviteMeiaValue, setExtraConviteMeiaValue] = React.useState("");
   const [extraConviteMeiaQty, setExtraConviteMeiaQty] = React.useState(1);
   const [extraConviteMeiaDiscount, setExtraConviteMeiaDiscount] =
     React.useState("");
@@ -155,9 +151,11 @@ const UpsertAlunoForm = ({
         (aluno as typeof alunosTable.$inferSelect & { convite_meia?: boolean })
           ?.convite_meia ?? false,
       valor_convite_meia:
-        (aluno as typeof alunosTable.$inferSelect & {
-          valor_convite_meia?: string;
-        })?.valor_convite_meia ?? "",
+        (
+          aluno as typeof alunosTable.$inferSelect & {
+            valor_convite_meia?: string;
+          }
+        )?.valor_convite_meia ?? "",
     },
   });
 
@@ -173,7 +171,26 @@ const UpsertAlunoForm = ({
       setIsFinanceOpen(false);
       onSuccess?.();
     },
-    onError: () => {
+    onError: (ctx) => {
+      const errorMessage = String(
+        (ctx as { error?: { serverError?: string; message?: string } })?.error
+          ?.serverError ??
+          (ctx as { error?: { serverError?: string; message?: string } })?.error
+            ?.message ??
+          "",
+      );
+
+      const isAlunoDuplicado =
+        errorMessage.includes("ALUNO_JA_EXISTE") ||
+        errorMessage.includes("Já existe um aluno cadastrado com esse nome") ||
+        errorMessage.includes("duplicate key value") ||
+        errorMessage.includes("23505");
+
+      if (isAlunoDuplicado) {
+        toast.error("ALUNO JA EXISTE!");
+        return;
+      }
+
       toast.error("Erro ao adicionar Aluno");
     },
   });
@@ -782,9 +799,9 @@ const UpsertAlunoForm = ({
                                     return;
                                   }
                                   const cents = parseInt(onlyDigits, 10);
-                                  const asNumberString = (
-                                    cents / 100
-                                  ).toFixed(2);
+                                  const asNumberString = (cents / 100).toFixed(
+                                    2,
+                                  );
                                   field.onChange(asNumberString);
                                 }}
                               />
@@ -924,8 +941,7 @@ const UpsertAlunoForm = ({
                                     }
                                     onChange={(e) => {
                                       const raw = e.target.value;
-                                      const onlyDigits =
-                                        raw.replace(/\D/g, "");
+                                      const onlyDigits = raw.replace(/\D/g, "");
                                       if (!onlyDigits) {
                                         setExtraConviteInteiraValue("");
                                         return;
@@ -965,8 +981,7 @@ const UpsertAlunoForm = ({
                                     }
                                     onChange={(e) => {
                                       const raw = e.target.value;
-                                      const onlyDigits =
-                                        raw.replace(/\D/g, "");
+                                      const onlyDigits = raw.replace(/\D/g, "");
                                       if (!onlyDigits) {
                                         setExtraConviteInteiraDiscount("");
                                         return;
@@ -988,9 +1003,9 @@ const UpsertAlunoForm = ({
                                             Math.max(
                                               0,
                                               parseFloat(
-                                                extraConviteInteiraValue ||
-                                                  "0",
-                                              ) * extraConviteInteiraQty -
+                                                extraConviteInteiraValue || "0",
+                                              ) *
+                                                extraConviteInteiraQty -
                                                 parseFloat(
                                                   extraConviteInteiraDiscount ||
                                                     "0",
@@ -1050,8 +1065,7 @@ const UpsertAlunoForm = ({
                                     }
                                     onChange={(e) => {
                                       const raw = e.target.value;
-                                      const onlyDigits =
-                                        raw.replace(/\D/g, "");
+                                      const onlyDigits = raw.replace(/\D/g, "");
                                       if (!onlyDigits) {
                                         setExtraConviteMeiaValue("");
                                         return;
@@ -1060,9 +1074,7 @@ const UpsertAlunoForm = ({
                                       const asNumberString = (
                                         cents / 100
                                       ).toFixed(2);
-                                      setExtraConviteMeiaValue(
-                                        asNumberString,
-                                      );
+                                      setExtraConviteMeiaValue(asNumberString);
                                     }}
                                   />
                                   <Input
@@ -1091,8 +1103,7 @@ const UpsertAlunoForm = ({
                                     }
                                     onChange={(e) => {
                                       const raw = e.target.value;
-                                      const onlyDigits =
-                                        raw.replace(/\D/g, "");
+                                      const onlyDigits = raw.replace(/\D/g, "");
                                       if (!onlyDigits) {
                                         setExtraConviteMeiaDiscount("");
                                         return;
@@ -1115,7 +1126,8 @@ const UpsertAlunoForm = ({
                                               0,
                                               parseFloat(
                                                 extraConviteMeiaValue || "0",
-                                              ) * extraConviteMeiaQty -
+                                              ) *
+                                                extraConviteMeiaQty -
                                                 parseFloat(
                                                   extraConviteMeiaDiscount ||
                                                     "0",
@@ -1155,10 +1167,7 @@ const UpsertAlunoForm = ({
                                     return;
                                   }
 
-                                  if (
-                                    extraAlbum &&
-                                    !extraAlbumValue.trim()
-                                  ) {
+                                  if (extraAlbum && !extraAlbumValue.trim()) {
                                     toast.error(
                                       "Informe o valor do Álbum extra",
                                     );
@@ -1227,7 +1236,8 @@ const UpsertAlunoForm = ({
                                     const discountValue = parseFloat(
                                       extraConviteMeiaDiscount || "0",
                                     );
-                                    const grossTotal = unit * extraConviteMeiaQty;
+                                    const grossTotal =
+                                      unit * extraConviteMeiaQty;
                                     const total = Math.max(
                                       0,
                                       grossTotal - discountValue,

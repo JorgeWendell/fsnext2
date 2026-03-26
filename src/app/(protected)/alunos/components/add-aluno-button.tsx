@@ -19,8 +19,18 @@ interface AddAlunoButtonProps {
 
 const AddAlunoButton = ({ escolas, pacotes }: AddAlunoButtonProps) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [formKey, setFormKey] = useState(0);
+
+  const handleOpenChange = (open: boolean) => {
+    setIsOpen(open);
+
+    if (!open) {
+      setFormKey((currentKey) => currentKey + 1);
+    }
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button className="w-full sm:w-auto">
           <Plus />
@@ -29,6 +39,7 @@ const AddAlunoButton = ({ escolas, pacotes }: AddAlunoButtonProps) => {
         </Button>
       </DialogTrigger>
       <UpsertAlunoForm
+        key={formKey}
         onSuccess={() => setIsOpen(false)}
         escolas={escolas}
         pacotes={pacotes}

@@ -107,6 +107,10 @@ npm install
 npx drizzle-kit push
 npm run build
 
+sudo mkdir -p "${APP_DIR}/.next/cache/images"
+sudo chown -R "${APP_USER}:${APP_USER}" "${APP_DIR}/.next"
+sudo chmod -R u+rwX "${APP_DIR}/.next"
+
 sudo tee /etc/systemd/system/${APP_NAME}.service >/dev/null <<EOF
 [Unit]
 Description=FSNext Next.js app
@@ -146,7 +150,7 @@ LockPersonality=true
 RemoveIPC=true
 UMask=0077
 SystemCallArchitectures=native
-ReadWritePaths=${APP_DIR}/.next ${APP_DIR}/.next/cache /tmp
+ReadWritePaths=${APP_DIR}/.next ${APP_DIR}/.next/cache ${APP_DIR}/.next/cache/images /tmp
 
 [Install]
 WantedBy=multi-user.target
