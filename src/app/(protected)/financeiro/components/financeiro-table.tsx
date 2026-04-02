@@ -108,6 +108,7 @@ const FinanceiroTable = ({
                           extras={extras.filter(
                             (extra) => extra.alunoId === aluno.id,
                           )}
+                          onRefresh={onRefresh}
                         />
                       </Dialog>
                     )}

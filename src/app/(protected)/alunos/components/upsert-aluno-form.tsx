@@ -49,6 +49,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { alunosTable, pacotesTable } from "@/db/schema";
+import { conviteValorTotalString } from "@/lib/convite-valor-total";
 import { validatePhone } from "@/lib/validations";
 
 const formSchema = z.object({
@@ -81,8 +82,16 @@ const formSchema = z.object({
   valor_baile: z.string().optional(),
   convite_inteira: z.boolean().optional(),
   valor_convite_inteira: z.string().optional(),
+  qtd_convite_inteira: z
+    .number()
+    .int()
+    .min(1, { message: "Quantidade mínima é 1" }),
   convite_meia: z.boolean().optional(),
   valor_convite_meia: z.string().optional(),
+  qtd_convite_meia: z
+    .number()
+    .int()
+    .min(1, { message: "Quantidade mínima é 1" }),
 });
 
 type FormSchema = z.infer<typeof formSchema>;
@@ -90,7 +99,18 @@ type FormSchema = z.infer<typeof formSchema>;
 type Escola = {
   id: string;
   name: string;
+  codigo?: string;
+  ano?: string | null;
   pacoteId?: string | null;
+};
+
+const formatEscolaSelectLabel = (escola: Escola) => {
+  const codeParts = [escola.codigo, escola.ano].filter(
+    (v): v is string => Boolean(v && String(v).trim()),
+  );
+  const code = codeParts.join("/");
+  if (!code) return escola.name;
+  return `${escola.name} - ${code}`;
 };
 
 type Pacote = typeof pacotesTable.$inferSelect;
@@ -148,6 +168,7 @@ const UpsertAlunoForm = ({
       valor_baile: aluno?.valor_baile ?? "",
       convite_inteira: aluno?.convite_inteira ?? false,
       valor_convite_inteira: aluno?.valor_convite_inteira ?? "",
+      qtd_convite_inteira: aluno?.qtd_convite_inteira ?? 1,
       convite_meia:
         (aluno as typeof alunosTable.$inferSelect & { convite_meia?: boolean })
           ?.convite_meia ?? false,
@@ -157,6 +178,7 @@ const UpsertAlunoForm = ({
             valor_convite_meia?: string;
           }
         )?.valor_convite_meia ?? "",
+      qtd_convite_meia: aluno?.qtd_convite_meia ?? 1,
     };
   }, [aluno]);
 
@@ -274,9 +296,11 @@ const UpsertAlunoForm = ({
     }
     if (form.getValues("convite_inteira") && pacote.conviteInteira) {
       form.setValue("valor_convite_inteira", pacote.conviteInteira);
+      form.setValue("qtd_convite_inteira", 1);
     }
     if (form.getValues("convite_meia") && pacote.conviteMeia) {
       form.setValue("valor_convite_meia", pacote.conviteMeia);
+      form.setValue("qtd_convite_meia", 1);
     }
   }, [escolas, form, pacotes]);
 
@@ -486,7 +510,7 @@ const UpsertAlunoForm = ({
                         {escolas && escolas.length > 0 ? (
                           escolas.map((escola) => (
                             <SelectItem key={escola.id} value={escola.id}>
-                              {escola.name}
+                              {formatEscolaSelectLabel(escola)}
                             </SelectItem>
                           ))
                         ) : (
@@ -722,6 +746,10 @@ const UpsertAlunoForm = ({
                               onChange={(e) => {
                                 const checked = e.target.checked;
                                 field.onChange(checked);
+                                if (!checked) {
+                                  form.setValue("valor_convite_inteira", "");
+                                  form.setValue("qtd_convite_inteira", 1);
+                                }
                                 applyPacoteFinanceValues();
                               }}
                               className="h-4 w-4 rounded border"
@@ -736,29 +764,75 @@ const UpsertAlunoForm = ({
                     />
 
                     {form.watch("convite_inteira") && (
-                      <FormField
-                        control={form.control}
-                        name="valor_convite_inteira"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Valor do Convite inteira</FormLabel>
-                            <FormControl>
-                              <Input
-                                placeholder="R$ 0,00"
-                                value={
-                                  field.value ? formatCurrency(field.value) : ""
-                                }
-                                readOnly={hasPacoteForCurrentEscola}
-                                onChange={(e) => {
-                                  if (hasPacoteForCurrentEscola) return;
-                                  handleConviteExtraValueChange(e);
-                                }}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                        <FormField
+                          control={form.control}
+                          name="valor_convite_inteira"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Valor unitário</FormLabel>
+                              <FormControl>
+                                <Input
+                                  placeholder="R$ 0,00"
+                                  value={
+                                    field.value ? formatCurrency(field.value) : ""
+                                  }
+                                  readOnly={hasPacoteForCurrentEscola}
+                                  onChange={(e) => {
+                                    if (hasPacoteForCurrentEscola) return;
+                                    handleConviteExtraValueChange(e);
+                                  }}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="qtd_convite_inteira"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Quantidade</FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="number"
+                                  min={1}
+                                  step={1}
+                                  readOnly={hasPacoteForCurrentEscola}
+                                  value={field.value}
+                                  onChange={(e) => {
+                                    if (hasPacoteForCurrentEscola) return;
+                                    const n = parseInt(e.target.value || "1", 10);
+                                    field.onChange(
+                                      Number.isNaN(n) || n < 1 ? 1 : n,
+                                    );
+                                  }}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormItem>
+                          <FormLabel>Valor total</FormLabel>
+                          <Input
+                            readOnly
+                            className="bg-muted"
+                            value={
+                              form.watch("valor_convite_inteira")
+                                ? formatCurrency(
+                                    conviteValorTotalString(
+                                      form.watch("valor_convite_inteira"),
+                                      form.watch("qtd_convite_inteira"),
+                                    ),
+                                  )
+                                : ""
+                            }
+                            placeholder="R$ 0,00"
+                          />
+                        </FormItem>
+                      </div>
                     )}
 
                     <FormField
@@ -773,28 +847,11 @@ const UpsertAlunoForm = ({
                               onChange={(e) => {
                                 const checked = e.target.checked;
                                 field.onChange(checked);
-
-                                if (checked) {
-                                  const escolaId = form.getValues("escola");
-                                  if (escolaId) {
-                                    const escola = escolas.find(
-                                      (es) => es.id === escolaId,
-                                    );
-                                    if (escola?.pacoteId) {
-                                      const pacote = pacotes.find(
-                                        (p) => p.id === escola.pacoteId,
-                                      );
-                                      if (pacote?.conviteMeia) {
-                                        form.setValue(
-                                          "valor_convite_meia",
-                                          pacote.conviteMeia,
-                                        );
-                                      }
-                                    }
-                                  }
-                                } else {
+                                if (!checked) {
                                   form.setValue("valor_convite_meia", "");
+                                  form.setValue("qtd_convite_meia", 1);
                                 }
+                                applyPacoteFinanceValues();
                               }}
                               className="h-4 w-4 rounded border"
                             />
@@ -806,39 +863,85 @@ const UpsertAlunoForm = ({
                     />
 
                     {form.watch("convite_meia") && (
-                      <FormField
-                        control={form.control}
-                        name="valor_convite_meia"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Valor do Convite Meia</FormLabel>
-                            <FormControl>
-                              <Input
-                                placeholder="R$ 0,00"
-                                value={
-                                  field.value ? formatCurrency(field.value) : ""
-                                }
-                                readOnly={hasPacoteForCurrentEscola}
-                                onChange={(e) => {
-                                  if (hasPacoteForCurrentEscola) return;
-                                  const raw = e.target.value;
-                                  const onlyDigits = raw.replace(/\D/g, "");
-                                  if (!onlyDigits) {
-                                    field.onChange("");
-                                    return;
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                        <FormField
+                          control={form.control}
+                          name="valor_convite_meia"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Valor unitário</FormLabel>
+                              <FormControl>
+                                <Input
+                                  placeholder="R$ 0,00"
+                                  value={
+                                    field.value ? formatCurrency(field.value) : ""
                                   }
-                                  const cents = parseInt(onlyDigits, 10);
-                                  const asNumberString = (cents / 100).toFixed(
-                                    2,
-                                  );
-                                  field.onChange(asNumberString);
-                                }}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                                  readOnly={hasPacoteForCurrentEscola}
+                                  onChange={(e) => {
+                                    if (hasPacoteForCurrentEscola) return;
+                                    const raw = e.target.value;
+                                    const onlyDigits = raw.replace(/\D/g, "");
+                                    if (!onlyDigits) {
+                                      field.onChange("");
+                                      return;
+                                    }
+                                    const cents = parseInt(onlyDigits, 10);
+                                    const asNumberString = (cents / 100).toFixed(
+                                      2,
+                                    );
+                                    field.onChange(asNumberString);
+                                  }}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="qtd_convite_meia"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Quantidade</FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="number"
+                                  min={1}
+                                  step={1}
+                                  readOnly={hasPacoteForCurrentEscola}
+                                  value={field.value}
+                                  onChange={(e) => {
+                                    if (hasPacoteForCurrentEscola) return;
+                                    const n = parseInt(e.target.value || "1", 10);
+                                    field.onChange(
+                                      Number.isNaN(n) || n < 1 ? 1 : n,
+                                    );
+                                  }}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormItem>
+                          <FormLabel>Valor total</FormLabel>
+                          <Input
+                            readOnly
+                            className="bg-muted"
+                            value={
+                              form.watch("valor_convite_meia")
+                                ? formatCurrency(
+                                    conviteValorTotalString(
+                                      form.watch("valor_convite_meia"),
+                                      form.watch("qtd_convite_meia"),
+                                    ),
+                                  )
+                                : ""
+                            }
+                            placeholder="R$ 0,00"
+                          />
+                        </FormItem>
+                      </div>
                     )}
 
                     <DialogFooter className="flex-col sm:flex-row gap-2 justify-end">

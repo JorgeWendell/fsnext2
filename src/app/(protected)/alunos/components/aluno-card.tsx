@@ -22,6 +22,7 @@ import { Card, CardFooter, CardHeader } from "@/components/ui/card";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { alunosTable } from "@/db/schema";
+import { conviteValorTotalString } from "@/lib/convite-valor-total";
 
 import UpsertAlunoForm from "./upsert-aluno-form";
 
@@ -157,27 +158,15 @@ const AlunoCard = ({ aluno, escolas }: AlunoCardProps) => {
                       .replace(".", ",")}`}
                 </span>
               )}
-              {(
-                aluno as typeof alunosTable.$inferSelect & {
-                  convite_inteira?: boolean;
-                  valor_convite_inteira?: string;
-                }
-              )?.convite_inteira && (
+              {aluno.convite_inteira && (
                 <span className="text-xs bg-orange-500/10 text-orange-700 dark:text-orange-400 px-2.5 py-1 rounded-full font-medium border border-orange-500/20">
                   Convite Inteira
-                  {(
-                    aluno as typeof alunosTable.$inferSelect & {
-                      convite_inteira?: boolean;
-                      valor_convite_inteira?: string;
-                    }
-                  )?.valor_convite_inteira &&
+                  {aluno.valor_convite_inteira &&
                     ` - R$ ${parseFloat(
-                      (
-                        aluno as typeof alunosTable.$inferSelect & {
-                          convite_inteira?: boolean;
-                          valor_convite_inteira?: string;
-                        }
-                      ).valor_convite_inteira || "0"
+                      conviteValorTotalString(
+                        aluno.valor_convite_inteira,
+                        aluno.qtd_convite_inteira,
+                      ),
                     )
                       .toFixed(2)
                       .replace(".", ",")}`}

@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { alunosTable, financesTable } from "@/db/schema";
+import { conviteValorTotalString } from "@/lib/convite-valor-total";
 
 import BoletosPreviewDialog from "./boletos-preview-dialog";
 import UpsertFinanceForm from "./upsert-finance-form";
@@ -112,16 +113,28 @@ const FinanceiroDialog = ({ aluno, finances, onClose, onRefresh }: FinanceiroDia
     {
       label: "Convite Inteira",
       enabled: Boolean((aluno as { convite_inteira?: boolean }).convite_inteira),
-      value:
-        (aluno as { valor_convite_inteira?: string | null })
-          .valor_convite_inteira ?? null,
+      value: (() => {
+        const unit = (aluno as { valor_convite_inteira?: string | null })
+          .valor_convite_inteira;
+        if (!unit) return null;
+        return conviteValorTotalString(
+          unit,
+          (aluno as { qtd_convite_inteira?: number | null }).qtd_convite_inteira,
+        );
+      })(),
     },
     {
       label: "Convite Meia",
       enabled: Boolean((aluno as { convite_meia?: boolean }).convite_meia),
-      value:
-        (aluno as { valor_convite_meia?: string | null }).valor_convite_meia ??
-        null,
+      value: (() => {
+        const unit = (aluno as { valor_convite_meia?: string | null })
+          .valor_convite_meia;
+        if (!unit) return null;
+        return conviteValorTotalString(
+          unit,
+          (aluno as { qtd_convite_meia?: number | null }).qtd_convite_meia,
+        );
+      })(),
     },
   ];
 

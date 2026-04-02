@@ -2,6 +2,7 @@ import { relations, sql } from "drizzle-orm";
 import {
   boolean,
   check,
+  integer,
   pgEnum,
   pgTable,
   text,
@@ -132,8 +133,10 @@ export const alunosTable = pgTable(
     valor_baile: text("valor_baile"),
     convite_inteira: boolean("convite_inteira").notNull().default(false),
     valor_convite_inteira: text("valor_convite_inteira"),
+    qtd_convite_inteira: integer("qtd_convite_inteira").notNull().default(1),
     convite_meia: boolean("convite_meia").notNull().default(false),
     valor_convite_meia: text("valor_convite_meia"),
+    qtd_convite_meia: integer("qtd_convite_meia").notNull().default(1),
     active: boolean("active").notNull().default(true),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updateAt: timestamp("update_at")

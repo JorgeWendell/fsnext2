@@ -20,6 +20,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { alunoExtrasTable, alunosTable, financesTable } from "@/db/schema";
+import { conviteValorTotalReais } from "@/lib/convite-valor-total";
 
 interface Escola {
   id: string;
@@ -55,8 +56,14 @@ const ReportDialog = ({ aluno, finances, escolas, extras }: Props) => {
   const valorAlbum = parseFloat(aluno.valor_album || "0");
   const valorColacao = parseFloat(aluno.valor_colacao || "0");
   const valorBaile = parseFloat(aluno.valor_baile || "0");
-  const valorConviteInteira = parseFloat(aluno.valor_convite_inteira || "0");
-  const valorConviteMeia = parseFloat(aluno.valor_convite_meia || "0");
+  const valorConviteInteira = conviteValorTotalReais(
+    aluno.valor_convite_inteira,
+    aluno.qtd_convite_inteira,
+  );
+  const valorConviteMeia = conviteValorTotalReais(
+    aluno.valor_convite_meia,
+    aluno.qtd_convite_meia,
+  );
 
   const totalItensAluno =
     valorAlbum + valorColacao + valorBaile + valorConviteInteira + valorConviteMeia;

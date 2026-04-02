@@ -1,11 +1,22 @@
 "use client";
 
-/* eslint-disable simple-import-sort/imports */
-
 import { useAction } from "next-safe-action/hooks";
+import { TrashIcon } from "lucide-react";
 import { useMemo, useState } from "react";
+import { toast } from "sonner";
 
+import { deleteAlunoExtra } from "@/actions/delete-aluno-extra";
 import { payAlunoExtra } from "@/actions/pay-aluno-extra";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import {
   DialogClose,
@@ -31,14 +42,18 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { alunoExtrasTable, alunosTable } from "@/db/schema";
-import { toast } from "sonner";
 
 interface ExtrasDialogProps {
   aluno: typeof alunosTable.$inferSelect;
   extras: typeof alunoExtrasTable.$inferSelect[];
+  onRefresh?: () => void;
 }
 
-const ExtrasDialog = ({ aluno, extras }: ExtrasDialogProps) => {
+const ExtrasDialog = ({ aluno, extras, onRefresh }: ExtrasDialogProps) => {
+  const [extraToDelete, setExtraToDelete] = useState<
+    typeof alunoExtrasTable.$inferSelect | null
+  >(null);
+
   const formatValue = (value: string) => {
     return new Intl.NumberFormat("pt-BR", {
       style: "currency",
@@ -95,9 +110,21 @@ const ExtrasDialog = ({ aluno, extras }: ExtrasDialogProps) => {
   const payAlunoExtraAction = useAction(payAlunoExtra, {
     onSuccess: () => {
       toast.success("Pagamento de itens extras registrado com sucesso");
+      onRefresh?.();
     },
     onError: () => {
       toast.error("Erro ao registrar pagamento de itens extras");
+    },
+  });
+
+  const deleteAlunoExtraAction = useAction(deleteAlunoExtra, {
+    onSuccess: () => {
+      toast.success("Item extra removido");
+      setExtraToDelete(null);
+      onRefresh?.();
+    },
+    onError: () => {
+      toast.error("Erro ao remover item extra");
     },
   });
 
@@ -119,15 +146,40 @@ const ExtrasDialog = ({ aluno, extras }: ExtrasDialogProps) => {
             <TableHeader>
               <TableRow>
                 <TableHead>Item</TableHead>
+                <TableHead className="hidden sm:table-cell">Status</TableHead>
                 <TableHead className="text-right">Valor total</TableHead>
+                <TableHead className="w-[52px] text-right" />
               </TableRow>
             </TableHeader>
             <TableBody>
               {extras.map((extra) => (
                 <TableRow key={extra.id}>
-                  <TableCell>{formatType(extra.type)}</TableCell>
+                  <TableCell>
+                    <div className="flex flex-col gap-0.5">
+                      <span>{formatType(extra.type)}</span>
+                      <span className="text-xs text-muted-foreground sm:hidden">
+                        {extra.paid ? "Pago" : "Pendente"}
+                      </span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="hidden sm:table-cell text-muted-foreground">
+                    {extra.paid ? "Pago" : "Pendente"}
+                  </TableCell>
                   <TableCell className="text-right">
                     {formatValue(extra.total)}
+                  </TableCell>
+                  <TableCell className="text-right p-2">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="text-destructive hover:text-destructive"
+                      disabled={deleteAlunoExtraAction.isPending}
+                      onClick={() => setExtraToDelete(extra)}
+                      aria-label="Remover item"
+                    >
+                      <TrashIcon className="h-4 w-4" />
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))}
@@ -197,10 +249,43 @@ const ExtrasDialog = ({ aluno, extras }: ExtrasDialogProps) => {
           </div>
         </div>
       )}
+
+      <AlertDialog
+        open={extraToDelete !== null}
+        onOpenChange={(open) => {
+          if (!open) setExtraToDelete(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remover item extra?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {extraToDelete?.paid
+                ? "Este item está marcado como pago. A remoção é permanente e não altera lançamentos financeiros já registrados em outras telas."
+                : "O item será excluído permanentemente. Esta ação não pode ser desfeita."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={deleteAlunoExtraAction.isPending}
+              onClick={(e) => {
+                e.preventDefault();
+                if (!extraToDelete) return;
+                deleteAlunoExtraAction.execute({
+                  id: extraToDelete.id,
+                  alunoId: aluno.id,
+                });
+              }}
+            >
+              Remover
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DialogContent>
   );
 };
 
 export default ExtrasDialog;
-
-

@@ -25,8 +25,10 @@ export const upsertAlunoSchema = z.object({
   valor_baile: z.string().optional(),
   convite_inteira: z.boolean().default(false).optional(),
   valor_convite_inteira: z.string().optional(),
+  qtd_convite_inteira: z.coerce.number().int().min(1).optional(),
   convite_meia: z.boolean().default(false).optional(),
   valor_convite_meia: z.string().optional(),
+  qtd_convite_meia: z.coerce.number().int().min(1).optional(),
   active: z.boolean().default(true).optional(),
 });
 

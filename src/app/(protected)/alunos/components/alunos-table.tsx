@@ -27,6 +27,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { alunoExtrasTable, alunosTable, pacotesTable } from "@/db/schema";
+import { conviteValorTotalString } from "@/lib/convite-valor-total";
 
 import UpsertAlunoForm from "./upsert-aluno-form";
 
@@ -236,29 +237,17 @@ const AlunosTable = ({
                   )}
                 </TableCell>
                 <TableCell className="hidden lg:table-cell">
-                  {(
-                    aluno as typeof alunosTable.$inferSelect & {
-                      convite_inteira?: boolean;
-                      valor_convite_inteira?: string;
-                    }
-                  )?.convite_inteira ? (
+                  {aluno.convite_inteira ? (
                     <div>
                       <div>Sim</div>
-                      {(
-                        aluno as typeof alunosTable.$inferSelect & {
-                          convite_inteira?: boolean;
-                          valor_convite_inteira?: string;
-                        }
-                      )?.valor_convite_inteira && (
+                      {aluno.valor_convite_inteira && (
                         <div className="text-xs text-muted-foreground">
                           R${" "}
                           {parseFloat(
-                            (
-                              aluno as typeof alunosTable.$inferSelect & {
-                                convite_inteira?: boolean;
-                                valor_convite_inteira?: string;
-                              }
-                            ).valor_convite_inteira || "0"
+                            conviteValorTotalString(
+                              aluno.valor_convite_inteira,
+                              aluno.qtd_convite_inteira,
+                            ),
                           )
                             .toFixed(2)
                             .replace(".", ",")}
@@ -270,29 +259,17 @@ const AlunosTable = ({
                   )}
                 </TableCell>
                 <TableCell className="hidden lg:table-cell">
-                  {(
-                    aluno as typeof alunosTable.$inferSelect & {
-                      convite_meia?: boolean;
-                      valor_convite_meia?: string;
-                    }
-                  )?.convite_meia ? (
+                  {aluno.convite_meia ? (
                     <div>
                       <div>Sim</div>
-                      {(
-                        aluno as typeof alunosTable.$inferSelect & {
-                          convite_meia?: boolean;
-                          valor_convite_meia?: string;
-                        }
-                      )?.valor_convite_meia && (
+                      {aluno.valor_convite_meia && (
                         <div className="text-xs text-muted-foreground">
                           R${" "}
                           {parseFloat(
-                            (
-                              aluno as typeof alunosTable.$inferSelect & {
-                                convite_meia?: boolean;
-                                valor_convite_meia?: string;
-                              }
-                            ).valor_convite_meia || "0"
+                            conviteValorTotalString(
+                              aluno.valor_convite_meia,
+                              aluno.qtd_convite_meia,
+                            ),
                           )
                             .toFixed(2)
                             .replace(".", ",")}

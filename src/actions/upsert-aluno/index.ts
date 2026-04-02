@@ -41,8 +41,10 @@ export const upsertAluno = actionClient
           valor_baile: parsedInput.valor_baile,
           convite_inteira: parsedInput.convite_inteira ?? false,
           valor_convite_inteira: parsedInput.valor_convite_inteira,
+          qtd_convite_inteira: parsedInput.qtd_convite_inteira ?? 1,
           convite_meia: parsedInput.convite_meia ?? false,
           valor_convite_meia: parsedInput.valor_convite_meia,
+          qtd_convite_meia: parsedInput.qtd_convite_meia ?? 1,
           active: parsedInput.active ?? true,
         })
         .onConflictDoUpdate({
@@ -64,8 +66,10 @@ export const upsertAluno = actionClient
             valor_baile: parsedInput.valor_baile,
             convite_inteira: parsedInput.convite_inteira ?? false,
             valor_convite_inteira: parsedInput.valor_convite_inteira,
+            qtd_convite_inteira: parsedInput.qtd_convite_inteira ?? 1,
             convite_meia: parsedInput.convite_meia ?? false,
             valor_convite_meia: parsedInput.valor_convite_meia,
+            qtd_convite_meia: parsedInput.qtd_convite_meia ?? 1,
             active: parsedInput.active ?? true,
           },
         });
