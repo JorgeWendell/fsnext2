@@ -799,10 +799,8 @@ const UpsertAlunoForm = ({
                                   type="number"
                                   min={1}
                                   step={1}
-                                  readOnly={hasPacoteForCurrentEscola}
                                   value={field.value}
                                   onChange={(e) => {
-                                    if (hasPacoteForCurrentEscola) return;
                                     const n = parseInt(e.target.value || "1", 10);
                                     field.onChange(
                                       Number.isNaN(n) || n < 1 ? 1 : n,
@@ -908,10 +906,8 @@ const UpsertAlunoForm = ({
                                   type="number"
                                   min={1}
                                   step={1}
-                                  readOnly={hasPacoteForCurrentEscola}
                                   value={field.value}
                                   onChange={(e) => {
-                                    if (hasPacoteForCurrentEscola) return;
                                     const n = parseInt(e.target.value || "1", 10);
                                     field.onChange(
                                       Number.isNaN(n) || n < 1 ? 1 : n,
