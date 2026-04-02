@@ -101,6 +101,7 @@ interface UpsertAlunoFormProps {
   escolas: Escola[];
   financeOpenByDefault?: boolean;
   pacotes?: Pacote[];
+  dialogOpen?: boolean;
 }
 
 const UpsertAlunoForm = ({
@@ -109,6 +110,7 @@ const UpsertAlunoForm = ({
   escolas = [],
   financeOpenByDefault = false,
   pacotes = [],
+  dialogOpen,
 }: UpsertAlunoFormProps) => {
   const [isFinanceOpen, setIsFinanceOpen] =
     React.useState<boolean>(financeOpenByDefault);
@@ -128,9 +130,8 @@ const UpsertAlunoForm = ({
     React.useState("");
   const isEditing = !!aluno;
 
-  const form = useForm<FormSchema>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
+  const buildDefaultValues = React.useCallback((): FormSchema => {
+    return {
       name: aluno?.name ?? "",
       codigo: aluno?.codigo ?? "",
       class: aluno?.class ?? "",
@@ -156,8 +157,36 @@ const UpsertAlunoForm = ({
             valor_convite_meia?: string;
           }
         )?.valor_convite_meia ?? "",
-    },
+    };
+  }, [aluno]);
+
+  const form = useForm<FormSchema>({
+    resolver: zodResolver(formSchema),
+    defaultValues: buildDefaultValues(),
   });
+
+  const resetPanelsAndExtras = React.useCallback(() => {
+    setIsFinanceOpen(financeOpenByDefault);
+    setIsExtrasOpen(false);
+    setExtraAlbum(false);
+    setExtraConviteInteira(false);
+    setExtraConviteMeia(false);
+    setExtraAlbumValue("");
+    setExtraConviteInteiraValue("");
+    setExtraConviteMeiaValue("");
+    setExtraConviteInteiraDiscount("");
+    setExtraConviteMeiaDiscount("");
+    setExtraConviteInteiraQty(1);
+    setExtraConviteMeiaQty(1);
+  }, [financeOpenByDefault]);
+
+  React.useEffect(() => {
+    if (dialogOpen === undefined) return;
+    if (!dialogOpen) {
+      form.reset(buildDefaultValues());
+      resetPanelsAndExtras();
+    }
+  }, [dialogOpen, form, buildDefaultValues, resetPanelsAndExtras]);
 
   const escolaSelecionadaId = form.watch("escola");
   const escolaSelecionada = escolas.find((e) => e.id === escolaSelecionadaId);

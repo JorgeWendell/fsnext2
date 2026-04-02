@@ -200,6 +200,7 @@ const AlunoCard = ({ aluno, escolas }: AlunoCardProps) => {
           </DialogTrigger>
           <UpsertAlunoForm
             aluno={aluno}
+            dialogOpen={isUpsertAlunoDialogOpen}
             escolas={escolas}
             onSuccess={() => setIsUpsertAlunoDialogOpen(false)}
           />

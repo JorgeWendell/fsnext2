@@ -19,14 +19,9 @@ interface AddAlunoButtonProps {
 
 const AddAlunoButton = ({ escolas, pacotes }: AddAlunoButtonProps) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [formKey, setFormKey] = useState(0);
 
   const handleOpenChange = (open: boolean) => {
     setIsOpen(open);
-
-    if (!open) {
-      setFormKey((currentKey) => currentKey + 1);
-    }
   };
 
   return (
@@ -39,7 +34,7 @@ const AddAlunoButton = ({ escolas, pacotes }: AddAlunoButtonProps) => {
         </Button>
       </DialogTrigger>
       <UpsertAlunoForm
-        key={formKey}
+        dialogOpen={isOpen}
         onSuccess={() => setIsOpen(false)}
         escolas={escolas}
         pacotes={pacotes}

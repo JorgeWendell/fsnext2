@@ -26,6 +26,7 @@ const AddAlunoFinanceButton = ({ escolas }: AddAlunoFinanceButtonProps) => {
         </Button>
       </DialogTrigger>
       <UpsertAlunoForm
+        dialogOpen={isOpen}
         onSuccess={() => setIsOpen(false)}
         escolas={escolas}
         financeOpenByDefault
