@@ -1,8 +1,8 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { or } from "drizzle-orm";
 
 import { PageContainer, PageContent, PageDescription, PageHeader, PageHeaderContent, PageTitle } from "@/components/ui/page-container";
-import { or } from "drizzle-orm";
 import { db } from "@/db";
 import { alunosTable, escolasTable } from "@/db/schema";
 import { auth } from "@/lib/auth";
