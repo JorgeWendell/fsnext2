@@ -22,6 +22,7 @@ type Escola = {
   id: string;
   name: string;
   codigo: string;
+  ano?: string | null;
   pacoteId?: string | null;
 };
 
@@ -58,6 +59,16 @@ const AlunosWithSearch = ({
     [escolas]
   );
 
+  const getEscolaByCodigoAno = useCallback(
+    (codigo: string, ano: string) =>
+      escolas.find(
+        (e) =>
+          e.codigo === codigo &&
+          String(e.ano ?? "").trim().toLowerCase() === ano.toLowerCase(),
+      ),
+    [escolas],
+  );
+
   const formatSex = (sex: string) => {
     return sex === "male" ? "Masculino" : "Feminino";
   };
@@ -69,8 +80,17 @@ const AlunosWithSearch = ({
       if (searchTerm.includes("/")) {
         const parts = searchTerm.split("/");
         if (parts.length === 2) {
-          const codigoAluno = parts[0].trim();
-          const codigoEscola = parts[1].trim();
+          const primeiraParte = parts[0].trim();
+          const segundaParte = parts[1].trim();
+          const escolaPorCodigoAno = getEscolaByCodigoAno(
+            primeiraParte,
+            segundaParte,
+          );
+          if (escolaPorCodigoAno) {
+            return aluno.escola === escolaPorCodigoAno.id;
+          }
+          const codigoAluno = primeiraParte;
+          const codigoEscola = segundaParte;
           const escolaEncontrada = getEscolaByCodigo(codigoEscola);
           if (escolaEncontrada) {
             return (
@@ -128,7 +148,13 @@ const AlunosWithSearch = ({
         "convite extra".includes(searchLower)
       );
     });
-  }, [alunos, searchTerm, getEscolaName, getEscolaByCodigo]);
+  }, [
+    alunos,
+    searchTerm,
+    getEscolaName,
+    getEscolaByCodigo,
+    getEscolaByCodigoAno,
+  ]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -185,7 +211,7 @@ const AlunosWithSearch = ({
         <div className="flex items-center space-x-2 w-full sm:w-auto">
           <Search className="h-4 w-4 text-muted-foreground flex-shrink-0" />
           <Input
-            placeholder="Buscar alunos... (ex: 001/100)"
+            placeholder="Buscar alunos... (ex: 002/065/26 ou 065/26)"
             className="w-full sm:max-w-sm"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
