@@ -13,16 +13,20 @@ export const updateAlbum = actionClient
       id: z.string(),
       album: z.boolean().optional(),
       valor_album: z.string().optional(),
+      pendrive: z.boolean().optional(),
+      valor_pendrive: z.string().optional(),
     })
   )
   .action(async ({ parsedInput }) => {
-    const { id, album, valor_album } = parsedInput;
+    const { id, album, valor_album, pendrive, valor_pendrive } = parsedInput;
 
     await db
       .update(alunosTable)
       .set({
         album: album ?? false,
         valor_album,
+        pendrive: pendrive ?? false,
+        valor_pendrive,
       })
       .where(eq(alunosTable.id, id));
 

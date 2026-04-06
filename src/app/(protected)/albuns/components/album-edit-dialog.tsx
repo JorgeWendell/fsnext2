@@ -16,6 +16,8 @@ const schema = z.object({
   id: z.string(),
   album: z.boolean().optional(),
   valor_album: z.string().optional(),
+  pendrive: z.boolean().optional(),
+  valor_pendrive: z.string().optional(),
 });
 
 type Schema = z.infer<typeof schema>;
@@ -38,6 +40,20 @@ const AlbumEditDialog = ({ aluno, onClose }: Props) => {
       id: aluno.id,
       album: (aluno as typeof alunosTable.$inferSelect & { album?: boolean; valor_album?: string }).album ?? true,
       valor_album: (aluno as typeof alunosTable.$inferSelect & { album?: boolean; valor_album?: string }).valor_album ?? "",
+      pendrive:
+        (
+          aluno as typeof alunosTable.$inferSelect & {
+            pendrive?: boolean;
+            valor_pendrive?: string;
+          }
+        ).pendrive ?? false,
+      valor_pendrive:
+        (
+          aluno as typeof alunosTable.$inferSelect & {
+            pendrive?: boolean;
+            valor_pendrive?: string;
+          }
+        ).valor_pendrive ?? "",
     }
   });
 
@@ -54,11 +70,17 @@ const AlbumEditDialog = ({ aluno, onClose }: Props) => {
     form.setValue("valor_album", val);
   };
 
+  const handlePendriveValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const only = e.target.value.replace(/\D/g, "");
+    const val = only ? (parseInt(only, 10)/100).toFixed(2) : "";
+    form.setValue("valor_pendrive", val);
+  };
+
   return (
     <DialogContent className="max-w-sm">
       <DialogHeader>
-        <DialogTitle>Editar Álbum - {aluno.name}</DialogTitle>
-        <DialogDescription>Atualize o status e o valor do álbum</DialogDescription>
+        <DialogTitle>Editar Produtos - {aluno.name}</DialogTitle>
+        <DialogDescription>Atualize álbum e pendrive</DialogDescription>
       </DialogHeader>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -85,6 +107,36 @@ const AlbumEditDialog = ({ aluno, onClose }: Props) => {
                   <FormLabel>Valor do Álbum</FormLabel>
                   <FormControl>
                     <Input placeholder="R$ 0,00" value={field.value ? formatCurrency(field.value) : ""} onChange={handleValorChange} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+
+          <FormField
+            control={form.control}
+            name="pendrive"
+            render={({ field }) => (
+              <FormItem className="flex items-center gap-2">
+                <FormControl>
+                  <input type="checkbox" checked={Boolean(field.value)} onChange={(e)=>field.onChange(e.target.checked)} />
+                </FormControl>
+                <FormLabel className="!mt-0">Pendrive</FormLabel>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {form.watch("pendrive") && (
+            <FormField
+              control={form.control}
+              name="valor_pendrive"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Valor do Pendrive</FormLabel>
+                  <FormControl>
+                    <Input placeholder="R$ 0,00" value={field.value ? formatCurrency(field.value) : ""} onChange={handlePendriveValueChange} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

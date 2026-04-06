@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { PageContainer, PageContent, PageDescription, PageHeader, PageHeaderContent, PageTitle } from "@/components/ui/page-container";
+import { or } from "drizzle-orm";
 import { db } from "@/db";
 import { alunosTable, escolasTable } from "@/db/schema";
 import { auth } from "@/lib/auth";
@@ -19,7 +20,8 @@ const AlbunsPage = async () => {
     [escolas, alunos] = await Promise.all([
       db.select().from(escolasTable),
       db.query.alunosTable.findMany({
-        where: (aluno, { eq }) => eq(aluno.album, true),
+        where: (aluno, { eq }) =>
+          or(eq(aluno.album, true), eq(aluno.pendrive, true)),
       }),
     ]);
   } catch {
@@ -32,7 +34,7 @@ const AlbunsPage = async () => {
       <PageHeader>
         <PageHeaderContent>
           <PageTitle>Álbuns</PageTitle>
-          <PageDescription>Gerencie os pedidos de álbuns dos alunos</PageDescription>
+          <PageDescription>Gerencie os pedidos de álbuns e pendrives dos alunos</PageDescription>
         </PageHeaderContent>
       </PageHeader>
       <PageContent>
