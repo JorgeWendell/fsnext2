@@ -1,8 +1,15 @@
+import { or } from "drizzle-orm";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { or } from "drizzle-orm";
 
-import { PageContainer, PageContent, PageDescription, PageHeader, PageHeaderContent, PageTitle } from "@/components/ui/page-container";
+import {
+  PageContainer,
+  PageContent,
+  PageDescription,
+  PageHeader,
+  PageHeaderContent,
+  PageTitle,
+} from "@/components/ui/page-container";
 import { db } from "@/db";
 import { alunosTable, escolasTable } from "@/db/schema";
 import { auth } from "@/lib/auth";
@@ -13,8 +20,8 @@ const AlbunsPage = async () => {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session?.user) redirect("/login");
 
-  let alunos: typeof alunosTable.$inferSelect[] = [];
-  let escolas: typeof escolasTable.$inferSelect[] = [];
+  let alunos: (typeof alunosTable.$inferSelect)[] = [];
+  let escolas: (typeof escolasTable.$inferSelect)[] = [];
 
   try {
     [escolas, alunos] = await Promise.all([
@@ -34,7 +41,9 @@ const AlbunsPage = async () => {
       <PageHeader>
         <PageHeaderContent>
           <PageTitle>Álbuns</PageTitle>
-          <PageDescription>Gerencie os pedidos de álbuns e pendrives dos alunos</PageDescription>
+          <PageDescription>
+            Gerencie os pedidos de álbuns e pendrives dos alunos
+          </PageDescription>
         </PageHeaderContent>
       </PageHeader>
       <PageContent>
