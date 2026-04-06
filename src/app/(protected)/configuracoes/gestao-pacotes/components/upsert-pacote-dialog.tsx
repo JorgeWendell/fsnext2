@@ -33,6 +33,7 @@ const formSchema = z.object({
   colacao: z.string().trim().optional(),
   baile: z.string().trim().optional(),
   album: z.string().trim().optional(),
+  pendrive: z.string().trim().optional(),
   conviteInteira: z.string().trim().optional(),
   conviteMeia: z.string().trim().optional(),
   conviteExtraInteira: z.string().trim().optional(),
@@ -70,6 +71,7 @@ const UpsertPacoteDialog = ({
       colacao: pacote?.colacao ?? "",
       baile: pacote?.baile ?? "",
       album: pacote?.album ?? "",
+      pendrive: pacote?.pendrive ?? "",
       conviteInteira: pacote?.conviteInteira ?? "",
       conviteMeia: pacote?.conviteMeia ?? "",
       conviteExtraInteira: pacote?.conviteExtraInteira ?? "",
@@ -99,6 +101,7 @@ const UpsertPacoteDialog = ({
         colacao: pacote.colacao ?? "",
         baile: pacote.baile ?? "",
         album: pacote.album ?? "",
+        pendrive: pacote.pendrive ?? "",
         conviteInteira: pacote.conviteInteira ?? "",
         conviteMeia: pacote.conviteMeia ?? "",
         conviteExtraInteira: pacote.conviteExtraInteira ?? "",
@@ -110,6 +113,7 @@ const UpsertPacoteDialog = ({
         colacao: "",
         baile: "",
         album: "",
+        pendrive: "",
         conviteInteira: "",
         conviteMeia: "",
         conviteExtraInteira: "",
@@ -215,6 +219,29 @@ const UpsertPacoteDialog = ({
               )}
             />
 
+            <FormField
+              control={form.control}
+              name="pendrive"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Pendrive</FormLabel>
+                  <FormControl>
+                    <NumericFormat
+                      {...currencyFormatProps}
+                      customInput={Input}
+                      value={field.value ?? ""}
+                      onValueChange={(values) => {
+                        field.onChange(values.value);
+                      }}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
             <FormField
               control={form.control}
               name="conviteInteira"

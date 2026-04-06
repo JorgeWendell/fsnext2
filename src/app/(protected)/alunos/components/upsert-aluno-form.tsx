@@ -76,6 +76,8 @@ const formSchema = z.object({
   escola: z.string().trim().min(1, { message: "Escola é obrigatória" }),
   album: z.boolean().optional(),
   valor_album: z.string().optional(),
+  pendrive: z.boolean().optional(),
+  valor_pendrive: z.string().optional(),
   colacao: z.boolean().optional(),
   valor_colacao: z.string().optional(),
   baile: z.boolean().optional(),
@@ -162,6 +164,8 @@ const UpsertAlunoForm = ({
       escola: aluno?.escola ?? "",
       album: aluno?.album ?? false,
       valor_album: aluno?.valor_album ?? "",
+      pendrive: aluno?.pendrive ?? false,
+      valor_pendrive: aluno?.valor_pendrive ?? "",
       colacao: aluno?.colacao ?? false,
       valor_colacao: aluno?.valor_colacao ?? "",
       baile: aluno?.baile ?? false,
@@ -288,6 +292,9 @@ const UpsertAlunoForm = ({
     if (form.getValues("album") && pacote.album) {
       form.setValue("valor_album", pacote.album);
     }
+    if (form.getValues("pendrive") && pacote.pendrive) {
+      form.setValue("valor_pendrive", pacote.pendrive);
+    }
     if (form.getValues("colacao") && pacote.colacao) {
       form.setValue("valor_colacao", pacote.colacao);
     }
@@ -326,6 +333,18 @@ const UpsertAlunoForm = ({
     const cents = parseInt(onlyDigits, 10);
     const asNumberString = (cents / 100).toFixed(2);
     form.setValue("valor_colacao", asNumberString);
+  };
+
+  const handlePendriveValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value;
+    const onlyDigits = raw.replace(/\D/g, "");
+    if (!onlyDigits) {
+      form.setValue("valor_pendrive", "");
+      return;
+    }
+    const cents = parseInt(onlyDigits, 10);
+    const asNumberString = (cents / 100).toFixed(2);
+    form.setValue("valor_pendrive", asNumberString);
   };
 
   const handleBaileValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -627,6 +646,55 @@ const UpsertAlunoForm = ({
                                 onChange={(e) => {
                                   if (hasPacoteForCurrentEscola) return;
                                   handleAlbumValueChange(e);
+                                }}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    )}
+
+                    <FormField
+                      control={form.control}
+                      name="pendrive"
+                      render={({ field }) => (
+                        <FormItem className="flex items-center space-x-2">
+                          <FormControl>
+                            <input
+                              type="checkbox"
+                              checked={Boolean(field.value)}
+                              onChange={(e) => {
+                                const checked = e.target.checked;
+                                field.onChange(checked);
+                                applyPacoteFinanceValues();
+                              }}
+                              className="h-4 w-4 rounded border"
+                            />
+                          </FormControl>
+                          <FormLabel className="!mt-0">Pendrive</FormLabel>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {form.watch("pendrive") && (
+                      <FormField
+                        control={form.control}
+                        name="valor_pendrive"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Valor do Pendrive</FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="R$ 0,00"
+                                value={
+                                  field.value ? formatCurrency(field.value) : ""
+                                }
+                                readOnly={hasPacoteForCurrentEscola}
+                                onChange={(e) => {
+                                  if (hasPacoteForCurrentEscola) return;
+                                  handlePendriveValueChange(e);
                                 }}
                               />
                             </FormControl>

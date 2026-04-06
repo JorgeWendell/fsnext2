@@ -6,6 +6,7 @@ export const upsertPacoteSchema = z.object({
   colacao: z.string().trim().optional(),
   baile: z.string().trim().optional(),
   album: z.string().trim().optional(),
+  pendrive: z.string().trim().optional(),
   conviteInteira: z.string().trim().optional(),
   conviteMeia: z.string().trim().optional(),
   conviteExtraInteira: z.string().trim().optional(),

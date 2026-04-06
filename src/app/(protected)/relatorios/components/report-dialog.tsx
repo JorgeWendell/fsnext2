@@ -54,6 +54,7 @@ const getPaymentMethodName = (method: string) => {
 const ReportDialog = ({ aluno, finances, escolas, extras }: Props) => {
   // Calcular total dos itens financeiros do aluno
   const valorAlbum = parseFloat(aluno.valor_album || "0");
+  const valorPendrive = parseFloat(aluno.valor_pendrive || "0");
   const valorColacao = parseFloat(aluno.valor_colacao || "0");
   const valorBaile = parseFloat(aluno.valor_baile || "0");
   const valorConviteInteira = conviteValorTotalReais(
@@ -66,7 +67,12 @@ const ReportDialog = ({ aluno, finances, escolas, extras }: Props) => {
   );
 
   const totalItensAluno =
-    valorAlbum + valorColacao + valorBaile + valorConviteInteira + valorConviteMeia;
+    valorAlbum +
+    valorPendrive +
+    valorColacao +
+    valorBaile +
+    valorConviteInteira +
+    valorConviteMeia;
   const escolaName = escolas.find((e) => e.id === aluno.escola)?.name ?? "-";
 
   const alunoExtras = extras.filter((e) => e.alunoId === aluno.id);
@@ -232,6 +238,8 @@ const ReportDialog = ({ aluno, finances, escolas, extras }: Props) => {
 
     const itensAdquiridos: string[] = [];
     if (aluno.album) itensAdquiridos.push(`Álbum: ${currency(valorAlbum)}`);
+    if (aluno.pendrive)
+      itensAdquiridos.push(`Pendrive: ${currency(valorPendrive)}`);
     if (aluno.colacao)
       itensAdquiridos.push(`Colação: ${currency(valorColacao)}`);
     if (aluno.baile) itensAdquiridos.push(`Baile: ${currency(valorBaile)}`);
@@ -291,7 +299,7 @@ const ReportDialog = ({ aluno, finances, escolas, extras }: Props) => {
 
       <div className="mb-4">
         <h3 className="text-lg font-semibold mb-3">Produtos Adquiridos</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
           <div
             className={`p-3 rounded-lg border ${aluno.album ? "bg-green-50 border-green-200" : "bg-gray-50 border-gray-200"}`}
           >
@@ -304,6 +312,22 @@ const ReportDialog = ({ aluno, finances, escolas, extras }: Props) => {
               </div>
               <div
                 className={`w-3 h-3 rounded-full ${aluno.album ? "bg-green-500" : "bg-gray-300"}`}
+              ></div>
+            </div>
+          </div>
+
+          <div
+            className={`p-3 rounded-lg border ${aluno.pendrive ? "bg-green-50 border-green-200" : "bg-gray-50 border-gray-200"}`}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="font-medium">Pendrive</div>
+                <div className="text-sm text-muted-foreground">
+                  {aluno.pendrive ? currency(valorPendrive) : "Não adquirido"}
+                </div>
+              </div>
+              <div
+                className={`w-3 h-3 rounded-full ${aluno.pendrive ? "bg-green-500" : "bg-gray-300"}`}
               ></div>
             </div>
           </div>

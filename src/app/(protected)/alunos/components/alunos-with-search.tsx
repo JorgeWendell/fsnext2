@@ -117,10 +117,12 @@ const AlunosWithSearch = ({
       }
       const alunoExt = aluno as typeof alunosTable.$inferSelect & {
         album?: boolean;
+        pendrive?: boolean;
         colacao?: boolean;
         baile?: boolean;
         convite_inteira?: boolean;
         valor_album?: string;
+        valor_pendrive?: string;
         valor_colacao?: string;
         valor_baile?: string;
         valor_convite_inteira?: string;
@@ -135,14 +137,17 @@ const AlunosWithSearch = ({
         getEscolaByCodigo(searchTerm)?.id === aluno.escola ||
         formatSex(aluno.sex).toLowerCase().includes(searchLower) ||
         (alunoExt?.album ? "sim" : "não").includes(searchLower) ||
+        (alunoExt?.pendrive ? "sim" : "não").includes(searchLower) ||
         (alunoExt?.colacao ? "sim" : "não").includes(searchLower) ||
         (alunoExt?.baile ? "sim" : "não").includes(searchLower) ||
         (alunoExt?.convite_inteira ? "sim" : "não").includes(searchLower) ||
         (alunoExt?.valor_album || "").includes(searchLower) ||
+        (alunoExt?.valor_pendrive || "").includes(searchLower) ||
         (alunoExt?.valor_colacao || "").includes(searchLower) ||
         (alunoExt?.valor_baile || "").includes(searchLower) ||
         (alunoExt?.valor_convite_inteira || "").includes(searchLower) ||
         "álbum".includes(searchLower) ||
+        "pendrive".includes(searchLower) ||
         "colação".includes(searchLower) ||
         "baile".includes(searchLower) ||
         "convite extra".includes(searchLower)

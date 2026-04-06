@@ -106,6 +106,15 @@ const AlunoCard = ({ aluno, escolas }: AlunoCardProps) => {
                       .replace(".", ",")}`}
                 </span>
               )}
+              {aluno.pendrive && (
+                <span className="text-xs bg-cyan-500/10 text-cyan-700 dark:text-cyan-400 px-2.5 py-1 rounded-full font-medium border border-cyan-500/20">
+                  Pendrive
+                  {aluno.valor_pendrive &&
+                    ` - R$ ${parseFloat(aluno.valor_pendrive || "0")
+                      .toFixed(2)
+                      .replace(".", ",")}`}
+                </span>
+              )}
               {(
                 aluno as typeof alunosTable.$inferSelect & {
                   colacao?: boolean;

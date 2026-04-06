@@ -101,6 +101,11 @@ const FinanceiroDialog = ({ aluno, finances, onClose, onRefresh }: FinanceiroDia
       value: (aluno as { valor_album?: string | null }).valor_album ?? null,
     },
     {
+      label: "Pendrive",
+      enabled: Boolean((aluno as { pendrive?: boolean }).pendrive),
+      value: (aluno as { valor_pendrive?: string | null }).valor_pendrive ?? null,
+    },
+    {
       label: "Colação",
       enabled: Boolean((aluno as { colacao?: boolean }).colacao),
       value: (aluno as { valor_colacao?: string | null }).valor_colacao ?? null,

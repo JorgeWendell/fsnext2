@@ -19,6 +19,8 @@ export const upsertAlunoSchema = z.object({
   escola: z.string().trim().min(1, { message: "Escola é obrigatória" }),
   album: z.boolean().default(false).optional(),
   valor_album: z.string().optional(),
+  pendrive: z.boolean().default(false).optional(),
+  valor_pendrive: z.string().optional(),
   colacao: z.boolean().default(false).optional(),
   valor_colacao: z.string().optional(),
   baile: z.boolean().default(false).optional(),

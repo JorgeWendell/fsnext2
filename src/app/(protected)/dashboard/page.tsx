@@ -95,6 +95,7 @@ const DashboardPage = async ({
   let escolasCount = 0;
   let representantesCount = 0;
   let alunosComAlbum = 0;
+  let alunosComPendrive = 0;
   let alunosComColacao = 0;
   let alunosComBaile = 0;
   let finances: typeof financesTable.$inferSelect[] = [];
@@ -106,6 +107,7 @@ const DashboardPage = async ({
       escolasCountRow,
       representantesCountRow,
       albumRow,
+      pendriveRow,
       colacaoRow,
       baileRow,
       financesData,
@@ -119,6 +121,11 @@ const DashboardPage = async ({
           .select({ value: count() })
           .from(alunosTable)
           .where(eq(alunosTable.album, true))
+          .then((r) => r[0]),
+        db
+          .select({ value: count() })
+          .from(alunosTable)
+          .where(eq(alunosTable.pendrive, true))
           .then((r) => r[0]),
         db
           .select({ value: count() })
@@ -141,6 +148,7 @@ const DashboardPage = async ({
     escolasCount = Number(escolasCountRow?.value ?? 0);
     representantesCount = Number(representantesCountRow?.value ?? 0);
     alunosComAlbum = Number(albumRow?.value ?? 0);
+    alunosComPendrive = Number(pendriveRow?.value ?? 0);
     alunosComColacao = Number(colacaoRow?.value ?? 0);
     alunosComBaile = Number(baileRow?.value ?? 0);
     finances = financesData;
@@ -340,6 +348,13 @@ const DashboardPage = async ({
             description={`${((alunosComAlbum / alunosCount) * 100 || 0).toFixed(1)}% do total`}
             iconName="BookImage"
             gradient="from-indigo-500/10 to-blue-500/10"
+          />
+          <StatsCard
+            title="Alunos com Pendrive"
+            value={alunosComPendrive}
+            description={`${((alunosComPendrive / alunosCount) * 100 || 0).toFixed(1)}% do total`}
+            iconName="TrendingUp"
+            gradient="from-cyan-500/10 to-sky-500/10"
           />
           <StatsCard
             title="Alunos com Colação"

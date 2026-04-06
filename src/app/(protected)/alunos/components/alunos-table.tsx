@@ -93,6 +93,7 @@ const AlunosTable = ({
                 <TableHead className="min-w-[100px] hidden md:table-cell">Classe</TableHead>
                 <TableHead className="min-w-[120px] hidden lg:table-cell">Escola</TableHead>
                 <TableHead className="min-w-[80px] hidden md:table-cell">Álbum</TableHead>
+                <TableHead className="min-w-[80px] hidden md:table-cell">Pendrive</TableHead>
                 <TableHead className="min-w-[80px] hidden md:table-cell">Colação</TableHead>
                 <TableHead className="min-w-[80px] hidden md:table-cell">Baile</TableHead>
                 <TableHead className="min-w-[100px] hidden lg:table-cell">Convite inteira</TableHead>
@@ -105,7 +106,7 @@ const AlunosTable = ({
           {alunos.length === 0 ? (
             <TableRow>
               <TableCell
-                colSpan={10}
+                colSpan={11}
                 className="text-center text-muted-foreground"
               >
                 Nenhum aluno encontrado
@@ -159,6 +160,23 @@ const AlunosTable = ({
                               }
                             ).valor_album || "0"
                           )
+                            .toFixed(2)
+                            .replace(".", ",")}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    "Não"
+                  )}
+                </TableCell>
+                <TableCell className="hidden md:table-cell">
+                  {aluno.pendrive ? (
+                    <div>
+                      <div>Sim</div>
+                      {aluno.valor_pendrive && (
+                        <div className="text-xs text-muted-foreground">
+                          R${" "}
+                          {parseFloat(aluno.valor_pendrive || "0")
                             .toFixed(2)
                             .replace(".", ",")}
                         </div>

@@ -66,6 +66,9 @@ const PacotesTable = ({ pacotes }: PacotesTableProps) => {
               Álbum
             </th>
             <th className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">
+              Pendrive
+            </th>
+            <th className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">
               C.I
             </th>
             <th className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">
@@ -86,7 +89,7 @@ const PacotesTable = ({ pacotes }: PacotesTableProps) => {
           {pacotes.length === 0 ? (
             <tr>
               <td
-                colSpan={9}
+                colSpan={10}
                 className="px-4 py-6 text-center text-sm text-slate-500 dark:text-slate-400"
               >
                 Nenhum pacote cadastrado ainda.
@@ -106,6 +109,9 @@ const PacotesTable = ({ pacotes }: PacotesTableProps) => {
                 </td>
                 <td className="px-4 py-3 text-center text-sm text-slate-700 dark:text-slate-200">
                   {pacote.album || "-"}
+                </td>
+                <td className="px-4 py-3 text-center text-sm text-slate-700 dark:text-slate-200">
+                  {pacote.pendrive || "-"}
                 </td>
                 <td className="px-4 py-3 text-center text-sm text-slate-700 dark:text-slate-200">
                   {pacote.conviteInteira || "-"}
