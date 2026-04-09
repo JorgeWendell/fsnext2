@@ -165,6 +165,8 @@ const FinanceiroDialog = ({ aluno, finances, onClose, onRefresh }: FinanceiroDia
             </div>
             <UpsertFinanceForm
               alunoId={aluno.id}
+              alunoName={aluno.name}
+              alunoPhone={aluno.phone}
               onSuccess={onRefresh}
               defaultValueTotal={alunoItemsTotal > 0 ? alunoItemsTotal.toFixed(2) : undefined}
             />
@@ -255,6 +257,8 @@ const FinanceiroDialog = ({ aluno, finances, onClose, onRefresh }: FinanceiroDia
                           <UpsertFinanceForm
                             finance={finance}
                             alunoId={aluno.id}
+                            alunoName={aluno.name}
+                            alunoPhone={aluno.phone}
                             onSuccess={handleSuccess}
                           />
                           <AlertDialog>
@@ -318,6 +322,8 @@ const FinanceiroDialog = ({ aluno, finances, onClose, onRefresh }: FinanceiroDia
        {/* Dialog de Boletos */}
        <BoletosPreviewDialog
          finances={finances}
+         alunoName={aluno.name}
+         alunoPhone={aluno.phone}
          isOpen={isBoletosDialogOpen}
          onClose={() => setIsBoletosDialogOpen(false)}
          onRefresh={onRefresh}

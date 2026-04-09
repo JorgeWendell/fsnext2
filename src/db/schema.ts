@@ -188,6 +188,7 @@ export const financesTable = pgTable("finances", {
   discount: text("discount"),
   parcelasPagas: text("parcelas_pagas"), // JSON string para armazenar status das parcelas
   firstDueDate: text("first_due_date"), // Data do primeiro vencimento para boletos
+  asaasBoletoRef: text("asaas_boleto_ref"),
   alunoId: uuid("alunoId")
     .notNull()
     .references(() => alunosTable.id, { onDelete: "cascade" }),

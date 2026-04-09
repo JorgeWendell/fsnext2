@@ -15,6 +15,7 @@ export const upsertFinance = actionClient
       valueTotal: z.string().min(1, "Valor total é obrigatório"),
       discount: z.string().optional(),
       firstDueDate: z.string().optional(), // Data do primeiro vencimento para boletos
+      asaasBoletoRef: z.string().optional(),
       alunoId: z.string().min(1, "Aluno é obrigatório"),
     })
   )
@@ -27,13 +28,13 @@ export const upsertFinance = actionClient
         valueTotal,
         discount,
         firstDueDate,
+        asaasBoletoRef,
         alunoId,
       } = parsedInput;
 
       const discountValue = discount ?? "0";
 
       if (id) {
-        // Atualizar financeiro existente
         await db
           .update(financesTable)
           .set({
@@ -43,11 +44,13 @@ export const upsertFinance = actionClient
             discount: discountValue,
             firstDueDate,
             alunoId,
+            ...(asaasBoletoRef !== undefined && asaasBoletoRef !== ""
+              ? { asaasBoletoRef }
+              : {}),
             updateAt: new Date(),
           })
           .where(eq(financesTable.id, id));
       } else {
-        // Inserir novo financeiro
         await db.insert(financesTable).values({
           method,
           bank_slip,
@@ -55,6 +58,7 @@ export const upsertFinance = actionClient
           discount: discountValue,
           firstDueDate,
           alunoId,
+          ...(asaasBoletoRef ? { asaasBoletoRef } : {}),
         });
       }
 

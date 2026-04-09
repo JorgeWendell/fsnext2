@@ -3,8 +3,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { addMonths, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useAction } from "next-safe-action/hooks";
-import { useEffect, useMemo,useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
+import { PatternFormat } from "react-number-format";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -38,6 +39,8 @@ import { financesTable } from "@/db/schema";
 interface UpsertFinanceFormProps {
   finance?: typeof financesTable.$inferSelect;
   alunoId: string;
+  alunoName: string;
+  alunoPhone: string | null;
   onSuccess: () => void;
   defaultValueTotal?: string;
 }
@@ -46,6 +49,7 @@ const upsertFinanceSchema = z.object({
   id: z.string().optional(),
   method: z.enum(["pix", "debit", "creditvista", "creditparc", "bank_slip"]),
   bank_slip: z.enum(["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]).optional(),
+  boletoCpf: z.string().optional(),
   valueTotal: z.string().min(1, "Valor é obrigatório"),
   discount: z.string().optional(),
   firstDueDate: z.string().optional(),
@@ -54,7 +58,21 @@ const upsertFinanceSchema = z.object({
 
 type UpsertFinanceInput = z.infer<typeof upsertFinanceSchema>;
 
-const UpsertFinanceForm = ({ finance, alunoId, onSuccess, defaultValueTotal }: UpsertFinanceFormProps) => {
+function firstAsaasErrorDescription(payload: {
+  asaasErrors?: unknown;
+  data?: { errors?: { description?: string }[] };
+}): string {
+  const list = Array.isArray(payload.asaasErrors)
+    ? payload.asaasErrors
+    : Array.isArray(payload.data?.errors)
+      ? payload.data.errors
+      : null;
+  const first = list?.[0];
+  return first && typeof first.description === "string" ? first.description : "";
+}
+
+const UpsertFinanceForm = ({ finance, alunoId, alunoName, alunoPhone, onSuccess, defaultValueTotal }: UpsertFinanceFormProps) => {
+  const isAsaasIntegrationEnabled = false;
   const [isOpen, setIsOpen] = useState(false);
   const [selectedMethod, setSelectedMethod] = useState<string>("");
   const [firstDueDate, setFirstDueDate] = useState<string>("");
@@ -73,6 +91,7 @@ const UpsertFinanceForm = ({ finance, alunoId, onSuccess, defaultValueTotal }: U
       id: finance?.id || undefined,
       method: finance?.method || "pix",
       bank_slip: finance?.bank_slip || undefined,
+      boletoCpf: "",
       valueTotal: finance?.valueTotal || defaultValueTotal || "",
       discount: finance?.discount || "0",
       firstDueDate: finance?.firstDueDate || "",
@@ -96,8 +115,153 @@ const UpsertFinanceForm = ({ finance, alunoId, onSuccess, defaultValueTotal }: U
     },
   });
 
-  const onSubmit = (data: UpsertFinanceInput) => {
-    upsertFinanceAction.execute(data);
+  const onSubmit = async (data: UpsertFinanceInput) => {
+    if (
+      isAsaasIntegrationEnabled &&
+      !finance &&
+      (data.method === "pix" || data.method === "bank_slip" || data.method === "creditparc")
+    ) {
+      if (data.method === "creditparc") {
+        const maxInstallmentCount = parseInt(data.bank_slip || "0", 10) || 0;
+        if (maxInstallmentCount < 1) {
+          toast.error("Selecione a quantidade de parcelas");
+          return;
+        }
+
+        const linkResponse = await fetch("/api/asaas/payment-link", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            value: parseFloat(data.valueTotal),
+            maxInstallmentCount,
+            name: `Crédito parcelado — ${alunoName}`,
+            description: `Pagamento no cartão em até ${maxInstallmentCount}x — ${alunoName}`,
+            externalReference: alunoId,
+          }),
+        });
+
+        const linkData = await linkResponse.json();
+
+        if (!linkResponse.ok || !linkData?.success) {
+          toast.error(
+            firstAsaasErrorDescription(linkData) ||
+              "Não foi possível criar link de pagamento no ASAAS",
+          );
+          return;
+        }
+
+        const payUrl = typeof linkData?.data?.url === "string" ? linkData.data.url : "";
+        toast.success("Link de pagamento (cartão parcelado) criado no ASAAS", {
+          ...(payUrl
+            ? {
+                action: {
+                  label: "Abrir link",
+                  onClick: () => window.open(payUrl, "_blank", "noopener,noreferrer"),
+                },
+              }
+            : {}),
+        });
+      } else {
+        if (!alunoPhone) {
+          toast.error("Aluno sem telefone cadastrado para integração ASAAS");
+          return;
+        }
+
+        const cpfDigits = (data.boletoCpf || "").replace(/\D/g, "");
+        if (data.method === "bank_slip" && !finance) {
+          if (cpfDigits.length !== 11) {
+            toast.error("Informe um CPF válido (11 dígitos) para boleto");
+            return;
+          }
+        }
+
+        const customerResponse = await fetch("/api/asaas/customer", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            name: alunoName,
+            phone: alunoPhone,
+            ...(data.method === "bank_slip" && cpfDigits.length === 11 ? { cpfCnpj: cpfDigits } : {}),
+          }),
+        });
+
+        const customerData = await customerResponse.json();
+        const customerId = customerData?.data?.id;
+
+        if (!customerResponse.ok || !customerData?.success || !customerId) {
+          toast.error("Não foi possível criar cliente no ASAAS");
+          return;
+        }
+
+        const billingTypeByMethod: Record<"pix" | "bank_slip", "PIX" | "BOLETO"> = {
+          pix: "PIX",
+          bank_slip: "BOLETO",
+        };
+
+        const billingType = billingTypeByMethod[data.method as "pix" | "bank_slip"];
+        const installmentCount = parseInt(data.bank_slip || "1", 10) || 1;
+        const today = new Date();
+        const fallbackDueDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+        const dueDate = data.firstDueDate || fallbackDueDate;
+
+        const paymentResponse = await fetch("/api/asaas/payment", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            customerId,
+            value: parseFloat(data.valueTotal),
+            description: `Transação financeira - ${alunoName}`,
+            billingType,
+            installmentCount,
+            dueDate,
+          }),
+        });
+
+        const paymentData = await paymentResponse.json();
+
+        if (!paymentResponse.ok || !paymentData?.success) {
+          toast.error(
+            firstAsaasErrorDescription(paymentData) || "Não foi possível criar cobrança no ASAAS",
+          );
+          return;
+        }
+
+        if (data.method === "pix") {
+          toast.success("Link/cobrança PIX criado no ASAAS");
+        } else {
+          toast.success("Boletos parcelados criados no ASAAS");
+        }
+
+        let asaasBoletoRefPayload: string | undefined;
+        if (data.method === "bank_slip") {
+          const pay = paymentData.data as { installment?: string | null; id?: string };
+          if (typeof pay?.installment === "string" && pay.installment.length > 0) {
+            asaasBoletoRefPayload = JSON.stringify({
+              type: "installment",
+              installmentId: pay.installment,
+            });
+          } else if (typeof pay?.id === "string" && pay.id.length > 0) {
+            asaasBoletoRefPayload = JSON.stringify({ type: "payment", paymentId: pay.id });
+          }
+        }
+
+        const { boletoCpf: _boletoCpf, ...financePayload } = data;
+        upsertFinanceAction.execute({
+          ...financePayload,
+          ...(asaasBoletoRefPayload ? { asaasBoletoRef: asaasBoletoRefPayload } : {}),
+        });
+        return;
+      }
+    }
+
+    const { boletoCpf: _boletoCpf, ...financePayload } = data;
+    upsertFinanceAction.execute(financePayload);
   };
 
   const handleMethodChange = (method: string) => {
@@ -105,6 +269,9 @@ const UpsertFinanceForm = ({ finance, alunoId, onSuccess, defaultValueTotal }: U
     form.setValue("method", method as "pix" | "debit" | "creditvista" | "creditparc" | "bank_slip");
     if (method !== "bank_slip" && method !== "creditparc") {
       form.setValue("bank_slip", undefined);
+    }
+    if (method !== "bank_slip") {
+      form.setValue("boletoCpf", "");
     }
   };
 
@@ -230,6 +397,33 @@ const UpsertFinanceForm = ({ finance, alunoId, onSuccess, defaultValueTotal }: U
                   </FormItem>
                 )}
               />
+
+              {selectedMethod === "bank_slip" && (
+                <FormField
+                  control={form.control}
+                  name="boletoCpf"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>CPF</FormLabel>
+                      <FormControl>
+                        <PatternFormat
+                          format="###.###.###-##"
+                          mask="_"
+                          value={field.value ?? ""}
+                          onValueChange={(values) => {
+                            field.onChange(values.value);
+                          }}
+                          getInputRef={field.ref}
+                          onBlur={field.onBlur}
+                          customInput={Input}
+                          placeholder="000.000.000-00"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
 
               <FormField
                 control={form.control}
