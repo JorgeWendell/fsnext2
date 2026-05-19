@@ -81,9 +81,10 @@ export const escolasTable = pgTable("escolas", {
   pacoteId: uuid("pacote_id").references(() => pacotesTable.id, {
     onDelete: "set null",
   }),
-  representanteId: uuid("representanteId")
-    .notNull()
-    .references(() => representantesTable.id, { onDelete: "cascade" }),
+  representanteId: uuid("representanteId").references(
+    () => representantesTable.id,
+    { onDelete: "set null" },
+  ),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updateAt: timestamp("update_at")
     .notNull()

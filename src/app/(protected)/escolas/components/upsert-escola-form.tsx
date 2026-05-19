@@ -53,10 +53,7 @@ const formSchema = z.object({
   address: z.string().trim().optional(),
   phone: z.string().trim().optional(),
   pacoteId: z.string().uuid().optional().or(z.literal("")),
-  representante: z
-    .string()
-    .trim()
-    .min(1, { message: "Representante é obrigatório" }),
+  representante: z.string().trim().optional().or(z.literal("")),
 });
 
 type FormSchema = z.infer<typeof formSchema>;
@@ -223,15 +220,22 @@ const UpsertEscolaForm = ({
                 <FormItem>
                   <FormLabel>Representante</FormLabel>
                   <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
+                    onValueChange={(value) =>
+                      field.onChange(value === "none" ? "" : value)
+                    }
+                    value={
+                      field.value && field.value !== ""
+                        ? field.value
+                        : "none"
+                    }
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Selecione um representante" />
+                      <SelectValue placeholder="Nenhum representante" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectGroup>
                         <SelectLabel>Representantes</SelectLabel>
+                        <SelectItem value="none">Nenhum</SelectItem>
                         {representantes && representantes.length > 0 ? (
                           representantes.map((representante) => (
                             <SelectItem
@@ -242,8 +246,8 @@ const UpsertEscolaForm = ({
                             </SelectItem>
                           ))
                         ) : (
-                          <SelectItem value="" disabled>
-                            Nenhum representante encontrado
+                          <SelectItem value="__empty" disabled>
+                            Nenhum representante cadastrado
                           </SelectItem>
                         )}
                       </SelectGroup>

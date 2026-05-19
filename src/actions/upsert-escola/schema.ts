@@ -18,10 +18,7 @@ export const upsertEscolaSchema = z.object({
   address: z.string().trim().optional(),
   phone: z.string().trim().optional(),
   pacoteId: z.string().uuid().optional().or(z.literal("")),
-  representante: z
-    .string()
-    .trim()
-    .min(1, { message: "Representante é obrigatório" }),
+  representante: z.string().trim().optional().or(z.literal("")),
 });
 
 export type upsertEscolaSchema = z.infer<typeof upsertEscolaSchema>;

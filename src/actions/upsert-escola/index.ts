@@ -26,7 +26,7 @@ export const upsertEscola = actionClient
       .insert(escolasTable)
       .values({
         id: parsedInput.id,
-        representanteId: representante,
+        representanteId: representante || null,
         pacoteId: pacoteId || null,
         ...rest,
       })
@@ -34,7 +34,7 @@ export const upsertEscola = actionClient
         target: escolasTable.id,
         set: {
           ...rest,
-          representanteId: representante,
+          representanteId: representante || null,
           pacoteId: pacoteId || null,
         },
       });

@@ -1,6 +1,7 @@
 import { ChevronRight, Package } from "lucide-react";
 import Link from "next/link";
 
+import ImportEscolasCard from "./components/import-escolas-csv-button";
 
 export default function Configuracoes() {
   return (
@@ -23,6 +24,7 @@ export default function Configuracoes() {
           </div>
           <ChevronRight className="h-5 w-5 text-gray-400 dark:text-gray-500" />
         </Link>
+        <ImportEscolasCard />
       </div>
     </div>
   );

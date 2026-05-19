@@ -1,7 +1,6 @@
 "use client";
 import { addMonths, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { MessageCircle } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -19,11 +18,9 @@ interface BoletosPreviewDialogProps {
   onRefresh: () => void;
 }
 
-const BoletosPreviewDialog = ({ finances, alunoName, alunoPhone, isOpen, onClose, onRefresh }: BoletosPreviewDialogProps) => {
-  const whatsappTestPhone = "+5511973920743";
+const BoletosPreviewDialog = ({ finances, isOpen, onClose, onRefresh }: BoletosPreviewDialogProps) => {
   const [boletoStatus, setBoletoStatus] = useState<Record<string, boolean>>({});
   const [isSaving, setIsSaving] = useState(false);
-  const [, setSendingWhatsappParcela] = useState<number | null>(null);
 
   // Carregar status existente das parcelas quando o dialog abrir
   useEffect(() => {
@@ -113,102 +110,102 @@ const BoletosPreviewDialog = ({ finances, alunoName, alunoPhone, isOpen, onClose
     }
   };
 
-  const handleSendWhatsapp = async (parcela: number, dueDate: string, value: string) => {
-    const targetPhone = alunoPhone || whatsappTestPhone;
-
-    if (!targetPhone) {
-      toast.error("Aluno sem telefone cadastrado");
-      return;
-    }
-
-    const bankSlipFinance = finances.find((f) => f.method === "bank_slip");
-    if (!bankSlipFinance) {
-      toast.error("Nenhum boleto encontrado");
-      return;
-    }
-
-    setSendingWhatsappParcela(parcela);
-    try {
-      const boletoRes = await fetch("/api/asaas/boleto-parcela", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ financeId: bankSlipFinance.id, parcela }),
-      });
-
-      const boletoData = await boletoRes.json();
-
-      if (!boletoRes.ok || !boletoData?.success) {
-        const err =
-          typeof boletoData?.error === "string"
-            ? boletoData.error
-            : "Não foi possível obter dados do boleto no ASAAS";
-        toast.error(err);
-        return;
-      }
-
-      const identificationField = String(boletoData.data?.identificationField ?? "");
-      const barCode = String(boletoData.data?.barCode ?? "");
-      const bankSlipUrl = String(boletoData.data?.bankSlipUrl ?? "");
-
-      const message = [
-        `Parcela ${parcela} do Boleto. Vencimento ${dueDate}. Valor: ${value}.`,
-        "",
-        "Linha digitável:",
-        identificationField || "(indisponível)",
-        "",
-        "Código de barras:",
-        barCode || "(indisponível)",
-        ...(bankSlipUrl ? ["", `PDF: ${bankSlipUrl}`] : []),
-      ].join("\n");
-
-      const response = await fetch("/api/whatsapp/send", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          phone: targetPhone,
-          name: alunoName,
-          message,
-          ...(bankSlipUrl ? { documentUrl: bankSlipUrl, documentFilename: `boleto-parcela-${parcela}.pdf` } : {}),
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok || !data?.success) {
-        const graph =
-          data?.data &&
-          typeof data.data === "object" &&
-          data.data !== null &&
-          "error" in data.data
-            ? (data.data as { error?: { message?: string } }).error
-            : undefined;
-        const detail =
-          typeof data?.error === "string"
-            ? data.error
-            : typeof graph?.message === "string"
-              ? graph.message
-              : null;
-        toast.error(detail || `Falha ao enviar WhatsApp da ${parcela}ª parcela`);
-        return;
-      }
-
-      if (bankSlipUrl && data.documentSent === false) {
-        toast.success(
-          "Mensagem enviada; o PDF não pôde ser anexado pelo WhatsApp (use o link do PDF no texto).",
-        );
-      } else {
-        toast.success(`WhatsApp enviado da ${parcela}ª parcela`);
-      }
-    } catch {
-      toast.error("Erro de rede ou resposta inválida. Tente novamente.");
-    } finally {
-      setSendingWhatsappParcela(null);
-    }
-  };
+  // const handleSendWhatsapp = async (parcela: number, dueDate: string, value: string) => {
+  //   const targetPhone = alunoPhone || whatsappTestPhone;
+  //
+  //   if (!targetPhone) {
+  //     toast.error("Aluno sem telefone cadastrado");
+  //     return;
+  //   }
+  //
+  //   const bankSlipFinance = finances.find((f) => f.method === "bank_slip");
+  //   if (!bankSlipFinance) {
+  //     toast.error("Nenhum boleto encontrado");
+  //     return;
+  //   }
+  //
+  //   setSendingWhatsappParcela(parcela);
+  //   try {
+  //     const boletoRes = await fetch("/api/asaas/boleto-parcela", {
+  //       method: "POST",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //       },
+  //       body: JSON.stringify({ financeId: bankSlipFinance.id, parcela }),
+  //     });
+  //
+  //     const boletoData = await boletoRes.json();
+  //
+  //     if (!boletoRes.ok || !boletoData?.success) {
+  //       const err =
+  //         typeof boletoData?.error === "string"
+  //           ? boletoData.error
+  //           : "Não foi possível obter dados do boleto no ASAAS";
+  //       toast.error(err);
+  //       return;
+  //     }
+  //
+  //     const identificationField = String(boletoData.data?.identificationField ?? "");
+  //     const barCode = String(boletoData.data?.barCode ?? "");
+  //     const bankSlipUrl = String(boletoData.data?.bankSlipUrl ?? "");
+  //
+  //     const message = [
+  //       `Parcela ${parcela} do Boleto. Vencimento ${dueDate}. Valor: ${value}.`,
+  //       "",
+  //       "Linha digitável:",
+  //       identificationField || "(indisponível)",
+  //       "",
+  //       "Código de barras:",
+  //       barCode || "(indisponível)",
+  //       ...(bankSlipUrl ? ["", `PDF: ${bankSlipUrl}`] : []),
+  //     ].join("\n");
+  //
+  //     const response = await fetch("/api/whatsapp/send", {
+  //       method: "POST",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //       },
+  //       body: JSON.stringify({
+  //         phone: targetPhone,
+  //         name: alunoName,
+  //         message,
+  //         ...(bankSlipUrl ? { documentUrl: bankSlipUrl, documentFilename: `boleto-parcela-${parcela}.pdf` } : {}),
+  //       }),
+  //     });
+  //
+  //     const data = await response.json();
+  //
+  //     if (!response.ok || !data?.success) {
+  //       const graph =
+  //         data?.data &&
+  //         typeof data.data === "object" &&
+  //         data.data !== null &&
+  //         "error" in data.data
+  //           ? (data.data as { error?: { message?: string } }).error
+  //           : undefined;
+  //       const detail =
+  //         typeof data?.error === "string"
+  //           ? data.error
+  //           : typeof graph?.message === "string"
+  //             ? graph.message
+  //             : null;
+  //       toast.error(detail || `Falha ao enviar WhatsApp da ${parcela}ª parcela`);
+  //       return;
+  //     }
+  //
+  //     if (bankSlipUrl && data.documentSent === false) {
+  //       toast.success(
+  //         "Mensagem enviada; o PDF não pôde ser anexado pelo WhatsApp (use o link do PDF no texto).",
+  //       );
+  //     } else {
+  //       toast.success(`WhatsApp enviado da ${parcela}ª parcela`);
+  //     }
+  //   } catch {
+  //     toast.error("Erro de rede ou resposta inválida. Tente novamente.");
+  //   } finally {
+  //     setSendingWhatsappParcela(null);
+  //   }
+  // };
 
   if (boletosPreview.length === 0) {
     return null;
@@ -249,16 +246,6 @@ const BoletosPreviewDialog = ({ finances, alunoName, alunoPhone, isOpen, onClose
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleSendWhatsapp(parcela, p.date, p.value)}
-                      disabled
-                    >
-                      <MessageCircle />
-                      WhatsApp
-                    </Button>
                     <span className={`font-semibold ${isPaid ? "text-green-600" : ""}`}>
                       {p.value}
                     </span>
